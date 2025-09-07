@@ -10,19 +10,22 @@ const Header = () => {
             <TrendingUp className="h-6 w-6 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            CreatorCash
+            OpportunityHub
           </h1>
         </div>
         
         <nav className="hidden md:flex items-center space-x-6">
-          <a href="#dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/feed" className="text-muted-foreground hover:text-foreground transition-colors">
+            Feed
+          </a>
+          <a href="/wallet" className="text-muted-foreground hover:text-foreground transition-colors">
+            Wallet
+          </a>
+          <a href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
             Dashboard
           </a>
-          <a href="#analytics" className="text-muted-foreground hover:text-foreground transition-colors">
-            Analytics
-          </a>
-          <a href="#earnings" className="text-muted-foreground hover:text-foreground transition-colors">
-            Earnings
+          <a href="/marketplace" className="text-muted-foreground hover:text-foreground transition-colors">
+            Marketplace
           </a>
         </nav>
         
@@ -31,7 +34,7 @@ const Header = () => {
             Sign In
           </Button>
           <Button variant="hero" size="lg">
-            Start Earning
+            Join Platform
           </Button>
         </div>
       </div>

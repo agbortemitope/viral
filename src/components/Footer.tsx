@@ -12,11 +12,11 @@ const Footer = () => {
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
               <h3 className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">
-                CreatorCash
+                OpportunityHub
               </h3>
             </div>
             <p className="text-muted-foreground text-sm">
-              Empowering creators to monetize their content through engaging advertisements.
+              Connecting users with opportunities through jobs, events, ads, and rewards.
             </p>
           </div>
           
@@ -24,10 +24,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-3">Platform</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Dashboard</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Analytics</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Earnings</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Ad Manager</a></li>
+              <li><a href="/feed" className="hover:text-foreground transition-colors">Feed</a></li>
+              <li><a href="/wallet" className="hover:text-foreground transition-colors">Wallet</a></li>
+              <li><a href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</a></li>
+              <li><a href="/marketplace" className="hover:text-foreground transition-colors">Marketplace</a></li>
             </ul>
           </div>
           
@@ -56,7 +56,7 @@ const Footer = () => {
         
         <div className="border-t border-border/50 pt-8 mt-8 flex flex-col md:flex-row items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            © 2024 CreatorCash. All rights reserved.
+            © 2024 OpportunityHub. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">

@@ -18,47 +18,47 @@ const HeroSection = () => {
               <div className="inline-flex items-center space-x-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
                 <Star className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-primary">
-                  New Platform for Creators
+                  Opportunity & Rewards Platform
                 </span>
               </div>
               
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                Turn Your{" "}
+                Connect with{" "}
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
-                  Creativity
+                  Opportunities
                 </span>{" "}
-                Into Cash
+                & Earn Coins
               </h1>
               
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Join thousands of creators earning real money from engaging ads. 
-                Get paid for every interaction, view, and engagement your content generates.
+                Discover jobs, events, ads, and connect with brands. 
+                Earn coins for every interaction and build your professional portfolio.
               </p>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Button variant="hero" size="lg" className="text-lg px-8 py-6">
                 <Play className="h-5 w-5 mr-2" />
-                Start Earning Today
+                Start Earning Coins
               </Button>
               <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                See How It Works
+                View Opportunities
               </Button>
             </div>
             
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border/50">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">$2.4M+</div>
-                <div className="text-sm text-muted-foreground">Paid to Creators</div>
+                <div className="text-2xl font-bold text-primary">₦4.2M+</div>
+                <div className="text-sm text-muted-foreground">Total Earnings</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-secondary">45K+</div>
-                <div className="text-sm text-muted-foreground">Active Creators</div>
+                <div className="text-2xl font-bold text-secondary">2.5K+</div>
+                <div className="text-sm text-muted-foreground">Active Users</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-accent">98%</div>
-                <div className="text-sm text-muted-foreground">Satisfaction Rate</div>
+                <div className="text-2xl font-bold text-accent">1.2K+</div>
+                <div className="text-sm text-muted-foreground">Daily Opportunities</div>
               </div>
             </div>
           </div>

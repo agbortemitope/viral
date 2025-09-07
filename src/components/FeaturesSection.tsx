@@ -12,38 +12,38 @@ const FeaturesSection = () => {
   const features = [
     {
       icon: Zap,
-      title: "Instant Payouts",
-      description: "Get paid immediately when users engage with your content. No waiting periods.",
+      title: "Instant Coin Rewards",
+      description: "Earn coins immediately when you engage with opportunities. No waiting periods.",
       iconColor: "bg-accent/20 text-accent",
     },
     {
       icon: Shield,
-      title: "Brand Safe Ads",
-      description: "All ads are pre-screened to ensure they align with your content and values.",
+      title: "Verified Opportunities",
+      description: "All opportunities are pre-screened to ensure they are legitimate and valuable.",
       iconColor: "bg-success/20 text-success",
     },
     {
       icon: Smartphone,
-      title: "Mobile Optimized",
-      description: "Your earnings dashboard works perfectly on any device, anywhere.",
+      title: "Mobile First Design",
+      description: "Access opportunities and manage your coins on any device, anywhere.",
       iconColor: "bg-primary/20 text-primary",
     },
     {
       icon: BarChart3,
-      title: "Advanced Analytics",
-      description: "Deep insights into your performance with detailed metrics and trends.",
+      title: "Performance Analytics",
+      description: "Track your earnings, engagement, and performance with detailed insights.",
       iconColor: "bg-secondary/20 text-secondary",
     },
     {
       icon: Users,
-      title: "Creator Community",
-      description: "Connect with other creators and share strategies for maximizing earnings.",
+      title: "Professional Network",
+      description: "Connect with brands, employers, and other professionals in our marketplace.",
       iconColor: "bg-primary/20 text-primary",
     },
     {
       icon: DollarSign,
-      title: "Multiple Revenue Streams",
-      description: "Earn from views, clicks, shares, and engagement bonuses.",
+      title: "Multiple Income Streams",
+      description: "Earn from job applications, event attendance, ad engagement, and referrals.",
       iconColor: "bg-success/20 text-success",
     },
   ];
@@ -52,15 +52,17 @@ const FeaturesSection = () => {
     <section className="py-20 bg-muted/20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
+          <div className="text-center mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
             Everything You Need to{" "}
             <span className="bg-gradient-primary bg-clip-text text-transparent">
-              Monetize
+              Succeed
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Our platform provides all the tools and features you need to turn your creativity into a sustainable income.
+            Our platform provides all the tools and features you need to discover opportunities and earn rewards.
           </p>
+        </div>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
