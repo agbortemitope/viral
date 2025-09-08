@@ -291,6 +291,7 @@ const Marketplace = () => {
       
       <Footer />
     </div>
+    </ProtectedRoute>
   );
 };
 
