@@ -22,7 +22,7 @@ const Header = () => {
             <div className="bg-gradient-primary p-2 rounded-lg">
               <Coins className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">OpportunityHub</h1>
+            <h1 className="text-2xl font-bold text-foreground">Viral</h1>
           </Link>
           
           {user && (

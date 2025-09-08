@@ -31,7 +31,7 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/feed`;
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -46,10 +46,18 @@ export const useAuth = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account.",
-      });
+      // Check if user needs email confirmation
+      if (data.user && !data.session) {
+        toast({
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
+        });
+      } else if (data.session) {
+        toast({
+          title: "Account created!",
+          description: "Welcome to Viral! You're now signed in.",
+        });
+      }
 
       return { data, error: null };
     } catch (error: any) {

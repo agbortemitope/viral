@@ -12,7 +12,7 @@ const Footer = () => {
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
               <h3 className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">
-                OpportunityHub
+                Viral
               </h3>
             </div>
             <p className="text-muted-foreground text-sm">
