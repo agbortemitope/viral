@@ -1,158 +1,119 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ContentCard, { ContentType } from "@/components/ContentCard";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Filter, Plus } from "lucide-react";
+import ContentCard from "@/components/ContentCard";
+import CreateAdModal from "@/components/CreateAdModal";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
-interface FeedItem {
+interface ContentItem {
   id: string;
-  type: ContentType;
   title: string;
   description: string;
-  coinReward: number;
-  image?: string;
-  location?: string;
-  date?: string;
-  company?: string;
+  content_type: string;
+  reward_coins: number;
+  image_url?: string;
+  created_at: string;
 }
 
 const Feed = () => {
-  const [selectedFilter, setSelectedFilter] = useState<ContentType | "all">("all");
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [content, setContent] = useState<ContentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Mock data
   useEffect(() => {
-    const mockData: FeedItem[] = [
-      {
-        id: "1",
-        type: "job",
-        title: "Frontend Developer",
-        description: "Join our dynamic team as a Frontend Developer. Work with React, TypeScript, and modern web technologies.",
-        coinReward: 150,
-        company: "TechCorp",
-        location: "Lagos, Nigeria",
-        image: "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=400&h=200&fit=crop"
-      },
-      {
-        id: "2",
-        type: "event",
-        title: "Tech Startup Meetup",
-        description: "Network with entrepreneurs and learn about the latest trends in technology and startups.",
-        coinReward: 50,
-        date: "Dec 15, 2024",
-        location: "Victoria Island, Lagos",
-        image: "https://images.unsplash.com/photo-1515169067868-5387ec356754?w=400&h=200&fit=crop"
-      },
-      {
-        id: "3",
-        type: "ad",
-        title: "New Smartphone Launch",
-        description: "Discover the latest smartphone with advanced features and incredible performance. Limited time offer!",
-        coinReward: 25,
-        image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=200&fit=crop"
-      },
-      {
-        id: "4",
-        type: "property",
-        title: "Modern 3BR Apartment",
-        description: "Beautiful 3-bedroom apartment in a prime location with modern amenities and great views.",
-        coinReward: 75,
-        location: "Ikoyi, Lagos",
-        image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=200&fit=crop"
-      },
-      {
-        id: "5",
-        type: "job",
-        title: "Digital Marketing Specialist",
-        description: "Help grow our brand through innovative digital marketing strategies and social media campaigns.",
-        coinReward: 120,
-        company: "MediaHub",
-        location: "Abuja, Nigeria"
-      },
-      {
-        id: "6",
-        type: "event",
-        title: "Business Workshop",
-        description: "Learn essential business skills from industry experts. Topics include finance, marketing, and growth strategies.",
-        coinReward: 80,
-        date: "Dec 20, 2024",
-        location: "Ikeja, Lagos"
-      }
-    ];
-    setFeedItems(mockData);
-  }, []);
+    if (!user) {
+      navigate("/signup");
+      return;
+    }
+    fetchContent();
+  }, [user, navigate]);
 
-  const filteredItems = selectedFilter === "all" 
-    ? feedItems 
-    : feedItems.filter(item => item.type === selectedFilter);
+  const fetchContent = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("content")
+        .select("*")
+        .in("status", ["approved", "active"])
+        .order("created_at", { ascending: false });
 
-  const filters = [
-    { key: "all" as const, label: "All", count: feedItems.length },
-    { key: "ad" as const, label: "Ads", count: feedItems.filter(i => i.type === "ad").length },
-    { key: "job" as const, label: "Jobs", count: feedItems.filter(i => i.type === "job").length },
-    { key: "event" as const, label: "Events", count: feedItems.filter(i => i.type === "event").length },
-    { key: "property" as const, label: "Properties", count: feedItems.filter(i => i.type === "property").length },
-  ];
+      if (error) throw error;
+      setContent(data || []);
+    } catch (error) {
+      console.error("Error fetching content:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) {
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-page">
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-page">
       <Header />
-      
       <main className="container mx-auto px-4 py-8">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Opportunity Feed</h1>
-            <p className="text-muted-foreground">
-              Discover jobs, events, ads, and properties. Earn coins for every interaction!
-            </p>
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-4 text-foreground">
+              Discover Opportunities
+            </h1>
+            <CreateAdModal onAdCreated={fetchContent} />
           </div>
           
-          <Button variant="hero" size="lg" className="mt-4 md:mt-0">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Ad
-          </Button>
-        </div>
-
-        {/* Filter Section */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          <div className="flex items-center space-x-2 text-muted-foreground">
-            <Filter className="h-4 w-4" />
-            <span className="text-sm font-medium">Filter by:</span>
+          {content.length === 0 ? (
+            <Card className="p-8 text-center bg-gradient-card border-border/50">
+              <p className="text-muted-foreground">
+                No opportunities available yet. Be the first to create one!
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              {content.map((item) => (
+                <ContentCard
+                  key={item.id}
+                  title={item.title}
+                  description={item.description}
+                  type={item.content_type as "job" | "event" | "ad" | "property"}
+                  coins={item.reward_coins}
+                  image={item.image_url}
+                  onInteraction={() => {
+                    // Handle user interaction and reward coins
+                    // This could be expanded to track interactions in the database
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          
+          <div className="text-center mt-8">
+            <p className="text-muted-foreground">
+              Keep scrolling to discover more opportunities...
+            </p>
           </div>
-          {filters.map((filter) => (
-            <Badge
-              key={filter.key}
-              variant={selectedFilter === filter.key ? "default" : "outline"}
-              className={`cursor-pointer transition-all duration-200 ${
-                selectedFilter === filter.key 
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                  : "hover:bg-primary/10"
-              }`}
-              onClick={() => setSelectedFilter(filter.key)}
-            >
-              {filter.label} ({filter.count})
-            </Badge>
-          ))}
-        </div>
-
-        {/* Feed Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {filteredItems.map((item) => (
-            <ContentCard key={item.id} {...item} />
-          ))}
-        </div>
-
-        {/* Load More */}
-        <div className="text-center">
-          <Button variant="outline" size="lg">
-            Load More Content
-          </Button>
         </div>
       </main>
-      
       <Footer />
     </div>
   );

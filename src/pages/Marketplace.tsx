@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -139,20 +140,21 @@ const Marketplace = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="bg-gradient-primary p-3 rounded-lg">
-            <Users className="h-6 w-6 text-primary-foreground" />
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background">
+        <Header />
+        
+        <main className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="flex items-center space-x-3 mb-8">
+            <div className="bg-gradient-primary p-3 rounded-lg">
+              <Users className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Influencer Marketplace</h1>
+              <p className="text-muted-foreground">Connect with talented creators and influencers</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Influencer Marketplace</h1>
-            <p className="text-muted-foreground">Connect with talented creators and influencers</p>
-          </div>
-        </div>
 
         {/* Search and Filters */}
         <div className="grid md:grid-cols-4 gap-4 mb-8">

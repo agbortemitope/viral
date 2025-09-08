@@ -14,7 +14,172 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      content: {
+        Row: {
+          budget: number
+          content_type: string
+          created_at: string
+          description: string
+          expires_at: string | null
+          id: string
+          image_url: string | null
+          reach_count: number
+          reward_coins: number
+          status: string
+          target_audience: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number
+          content_type: string
+          created_at?: string
+          description: string
+          expires_at?: string | null
+          id?: string
+          image_url?: string | null
+          reach_count?: number
+          reward_coins?: number
+          status?: string
+          target_audience?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number
+          content_type?: string
+          created_at?: string
+          description?: string
+          expires_at?: string | null
+          id?: string
+          image_url?: string | null
+          reach_count?: number
+          reward_coins?: number
+          status?: string
+          target_audience?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          coins: number
+          created_at: string
+          full_name: string | null
+          id: string
+          total_earnings: number
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          coins?: number
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          total_earnings?: number
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          coins?: number
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          total_earnings?: number
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          content_id: string | null
+          created_at: string
+          description: string
+          id: string
+          status: string
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          content_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          status?: string
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          content_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_interactions: {
+        Row: {
+          content_id: string
+          created_at: string
+          id: string
+          interaction_type: string
+          rewarded: boolean
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          id?: string
+          interaction_type: string
+          rewarded?: boolean
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          id?: string
+          interaction_type?: string
+          rewarded?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_interactions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
