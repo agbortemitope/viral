@@ -18,11 +18,8 @@ const SignUp = () => {
   const { signUp, signIn, user } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      navigate("/feed");
-    }
-  }, [user, navigate]);
+  // Remove the useEffect that was causing redirect conflicts
+  // The auth hook now handles redirects properly
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

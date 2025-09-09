@@ -16,6 +16,22 @@ export const useAuth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle email confirmations
+        if (event === 'SIGNED_IN' && session) {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('type') === 'signup') {
+            setTimeout(() => {
+              toast({
+                title: "Email confirmed!",
+                description: "Your account has been verified successfully.",
+              });
+              // Clean up URL and redirect to feed
+              window.history.replaceState({}, document.title, '/feed');
+              window.location.href = '/feed';
+            }, 0);
+          }
+        }
       }
     );
 
@@ -27,7 +43,7 @@ export const useAuth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [toast]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
@@ -57,6 +73,10 @@ export const useAuth = () => {
           title: "Account created!",
           description: "Welcome to Viral! You're now signed in.",
         });
+        // Redirect immediately on successful signup with session
+        setTimeout(() => {
+          window.location.href = '/feed';
+        }, 100);
       }
 
       return { data, error: null };
@@ -83,6 +103,11 @@ export const useAuth = () => {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
+
+      // Redirect to feed after successful sign in
+      setTimeout(() => {
+        window.location.href = '/feed';
+      }, 100);
 
       return { data, error: null };
     } catch (error: any) {
