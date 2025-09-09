@@ -40,6 +40,8 @@ const SignUp = () => {
           navigate("/feed");
         }
       }
+    } catch (error) {
+      console.error('Authentication error:', error);
     } finally {
       setLoading(false);
     }

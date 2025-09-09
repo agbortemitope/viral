@@ -1,4 +1,5 @@
 import { TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -24,10 +25,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-3">Platform</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="/feed" className="hover:text-foreground transition-colors">Feed</a></li>
-              <li><a href="/wallet" className="hover:text-foreground transition-colors">Wallet</a></li>
-              <li><a href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</a></li>
-              <li><a href="/marketplace" className="hover:text-foreground transition-colors">Marketplace</a></li>
+              <li><Link to="/feed" className="hover:text-foreground transition-colors">Feed</Link></li>
+              <li><Link to="/wallet" className="hover:text-foreground transition-colors">Wallet</Link></li>
+              <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
+              <li><Link to="/marketplace" className="hover:text-foreground transition-colors">Marketplace</Link></li>
             </ul>
           </div>
           

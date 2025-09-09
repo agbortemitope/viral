@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener
@@ -26,9 +28,9 @@ export const useAuth = () => {
                 title: "Email confirmed!",
                 description: "Your account has been verified successfully.",
               });
-              // Clean up URL and redirect to feed
-              window.history.replaceState({}, document.title, '/feed');
-              window.location.href = '/feed';
+              // Clean up URL and navigate to feed
+              window.history.replaceState({}, document.title, window.location.pathname);
+              navigate('/feed');
             }, 0);
           }
         }
@@ -43,7 +45,7 @@ export const useAuth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [toast]);
+  }, [toast, navigate]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
