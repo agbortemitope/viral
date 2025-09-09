@@ -73,10 +73,6 @@ export const useAuth = () => {
           title: "Account created!",
           description: "Welcome to Viral! You're now signed in.",
         });
-        // Redirect immediately on successful signup with session
-        setTimeout(() => {
-          window.location.href = '/feed';
-        }, 100);
       }
 
       return { data, error: null };
@@ -103,11 +99,6 @@ export const useAuth = () => {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-
-      // Redirect to feed after successful sign in
-      setTimeout(() => {
-        window.location.href = '/feed';
-      }, 100);
 
       return { data, error: null };
     } catch (error: any) {
