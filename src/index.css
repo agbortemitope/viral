@@ -45,6 +45,7 @@ All colors MUST be HSL.
     --gradient-hero: linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(180 62% 55%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(240 5% 6%) 0%, hsl(240 7% 8%) 100%);
     --gradient-earnings: linear-gradient(90deg, hsl(142 76% 36%) 0%, hsl(38 92% 50%) 100%);
+    --gradient-page: linear-gradient(135deg, hsl(240 10% 3.9%) 0%, hsl(240 7% 8%) 100%);
 
     /* Shadows */
     --shadow-glow: 0 0 40px hsl(263 70% 50% / 0.3);

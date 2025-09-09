@@ -68,6 +68,7 @@ export default {
         'gradient-hero': 'var(--gradient-hero)',
         'gradient-card': 'var(--gradient-card)',
         'gradient-earnings': 'var(--gradient-earnings)',
+        'gradient-page': 'var(--gradient-page)',
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
