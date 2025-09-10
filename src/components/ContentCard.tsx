@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Coins, ArrowRight } from "lucide-react";
+import { Coins, ArrowRight, CheckCircle } from "lucide-react";
+import { useState } from "react";
 
 interface ContentCardProps {
   title: string;
@@ -9,10 +10,26 @@ interface ContentCardProps {
   type: "job" | "event" | "ad" | "property";
   coins: number;
   image?: string;
-  onInteraction?: () => void;
+  onInteraction?: () => Promise<void>;
 }
 
 const ContentCard = ({ title, description, type, coins, image, onInteraction }: ContentCardProps) => {
+  const [isInteracting, setIsInteracting] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  const handleInteraction = async () => {
+    if (!onInteraction || hasInteracted) return;
+    
+    setIsInteracting(true);
+    try {
+      await onInteraction();
+      setHasInteracted(true);
+    } catch (error) {
+      console.error("Error during interaction:", error);
+    } finally {
+      setIsInteracting(false);
+    }
+  };
   const getTypeColor = () => {
     switch (type) {
       case "job": return "bg-success/20 text-success border-success/30";
@@ -67,13 +84,25 @@ const ContentCard = ({ title, description, type, coins, image, onInteraction }: 
         )}
         
         <Button 
-          variant="earnings" 
+          variant={hasInteracted ? "secondary" : "earnings"} 
           size="sm" 
           className="mt-4 w-full"
-          onClick={onInteraction}
+          onClick={handleInteraction}
+          disabled={isInteracting || hasInteracted}
         >
-          <ArrowRight className="h-4 w-4 ml-2" />
-          Get More Info
+          {isInteracting ? (
+            <>Loading...</>
+          ) : hasInteracted ? (
+            <>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Completed
+            </>
+          ) : (
+            <>
+              Get More Info
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </Card>

@@ -1,30 +1,30 @@
 import { useState, useEffect } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Coins, ArrowUpCircle, ArrowDownCircle, Loader2, Wallet } from "lucide-react";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Coins, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Wallet as WalletIcon,
-  CreditCard,
-  TrendingUp,
-  History
-} from "lucide-react";
 
-const Wallet = () => {
+interface Transaction {
+  id: string;
+  transaction_type: string;
+  amount: number;
+  description: string;
+  status: string;
+  created_at: string;
+}
+
+const WalletPage = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -64,10 +64,41 @@ const Wallet = () => {
 
     setLoading(true);
     try {
-      // In a real app, this would integrate with a payment provider
+      // Create deposit transaction record
+      const { error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: user?.id,
+          transaction_type: "deposit",
+          amount: amount,
+          description: `Deposit of ₦${amount.toLocaleString()}`,
+          status: "completed"
+        });
+
+      if (transactionError) throw transactionError;
+
+      // Update user's coin balance
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ 
+          coins: (profile?.coins || 0) + amount,
+        })
+        .eq("user_id", user?.id);
+
+      if (profileError) throw profileError;
+
       toast({
-        title: "Feature coming soon",
-        description: "Payment integration will be available soon!",
+        title: "Deposit successful!",
+        description: `₦${amount.toLocaleString()} has been added to your wallet`,
+      });
+
+      setDepositAmount("");
+      fetchTransactions();
+    } catch (error) {
+      toast({
+        title: "Deposit failed",
+        description: "There was an error processing your deposit",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -76,16 +107,25 @@ const Wallet = () => {
 
   const handleWithdrawal = async () => {
     const amount = parseInt(withdrawAmount);
-    if (!amount || amount <= 0 || amount < 1000) {
+    if (!amount || amount <= 0) {
       toast({
         title: "Invalid amount",
-        description: "Minimum withdrawal amount is 1,000 coins",
+        description: "Please enter a valid withdrawal amount",
         variant: "destructive",
       });
       return;
     }
 
-    if (!profile || profile.coins < amount) {
+    if (amount < 1000) {
+      toast({
+        title: "Minimum withdrawal",
+        description: "Minimum withdrawal amount is ₦1,000",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (amount > (profile?.coins || 0)) {
       toast({
         title: "Insufficient balance",
         description: "You don't have enough coins for this withdrawal",
@@ -96,10 +136,41 @@ const Wallet = () => {
 
     setLoading(true);
     try {
-      // In a real app, this would process the withdrawal
+      // Create withdrawal transaction record
+      const { error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: user?.id,
+          transaction_type: "withdrawal",
+          amount: -amount, // Negative for withdrawal
+          description: `Withdrawal of ₦${amount.toLocaleString()}`,
+          status: "pending" // Withdrawals start as pending for review
+        });
+
+      if (transactionError) throw transactionError;
+
+      // Update user's coin balance
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ 
+          coins: (profile?.coins || 0) - amount,
+        })
+        .eq("user_id", user?.id);
+
+      if (profileError) throw profileError;
+
       toast({
-        title: "Feature coming soon",
-        description: "Withdrawal processing will be available soon!",
+        title: "Withdrawal request submitted!",
+        description: `Your request for ₦${amount.toLocaleString()} is being processed`,
+      });
+
+      setWithdrawAmount("");
+      fetchTransactions();
+    } catch (error) {
+      toast({
+        title: "Withdrawal failed",
+        description: "There was an error processing your withdrawal",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -108,188 +179,177 @@ const Wallet = () => {
 
   const walletBalance = profile?.coins || 0;
   const pendingEarnings = transactions
-    .filter(t => t.status === 'pending')
+    .filter(t => t.status === 'pending' && t.amount > 0)
     .reduce((sum, t) => sum + t.amount, 0);
+  const withdrawableAmount = walletBalance - pendingEarnings;
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'earning':
+      case 'deposit':
+        return <ArrowUpCircle className="h-4 w-4 text-success" />;
+      case 'withdrawal':
+        return <ArrowDownCircle className="h-4 w-4 text-destructive" />;
+      default:
+        return <Coins className="h-4 w-4 text-primary" />;
+    }
+  };
+
+  const getAmountColor = (type: string, amount: number) => {
+    if (type === 'withdrawal' || amount < 0) return 'text-destructive';
+    return 'text-success';
+  };
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-page">
         <Header />
         
         <main className="container mx-auto px-4 py-8">
           <div className="flex items-center space-x-3 mb-8">
-            <div className="bg-gradient-primary p-3 rounded-lg">
-              <WalletIcon className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">My Wallet</h1>
-              <p className="text-muted-foreground">Manage your coins and earnings</p>
-            </div>
+            <Wallet className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold text-foreground">Wallet</h1>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6 mb-8">
-            {/* Balance Cards */}
+          {/* Balance Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="p-6 bg-gradient-card border-border/50">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
                 <div className="bg-primary/20 p-3 rounded-lg">
                   <Coins className="h-6 w-6 text-primary" />
                 </div>
-                <Badge className="bg-success/20 text-success border-success/30">
-                  Active
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Total Balance</p>
-                <p className="text-3xl font-bold text-foreground">{walletBalance.toLocaleString()}</p>
-                <p className="text-xs text-success flex items-center">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  Available for use
-                </p>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Balance</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    ₦{walletBalance.toLocaleString()}
+                  </p>
+                </div>
               </div>
             </Card>
 
             <Card className="p-6 bg-gradient-card border-border/50">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
                 <div className="bg-accent/20 p-3 rounded-lg">
-                  <ArrowDownLeft className="h-6 w-6 text-accent" />
+                  <ArrowUpCircle className="h-6 w-6 text-accent" />
                 </div>
-                <Badge className="bg-accent/20 text-accent border-accent/30">
-                  Pending
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Pending Earnings</p>
-                <p className="text-3xl font-bold text-foreground">{pendingEarnings.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">
-                  Processing...
-                </p>
+                <div>
+                  <p className="text-sm text-muted-foreground">Pending Earnings</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    ₦{pendingEarnings.toLocaleString()}
+                  </p>
+                </div>
               </div>
             </Card>
 
             <Card className="p-6 bg-gradient-card border-border/50">
-              <div className="flex items-center justify-between mb-4">
-                <div className="bg-secondary/20 p-3 rounded-lg">
-                  <ArrowUpRight className="h-6 w-6 text-secondary" />
+              <div className="flex items-center space-x-3">
+                <div className="bg-success/20 p-3 rounded-lg">
+                  <ArrowDownCircle className="h-6 w-6 text-success" />
                 </div>
-                <Badge className="bg-secondary/20 text-secondary border-secondary/30">
-                  Available
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Withdrawable</p>
-                <p className="text-3xl font-bold text-foreground">
-                  {Math.max(0, walletBalance - 1000).toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Min. withdrawal: 1,000 coins
-                </p>
+                <div>
+                  <p className="text-sm text-muted-foreground">Withdrawable</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    ₦{Math.max(0, withdrawableAmount).toLocaleString()}
+                  </p>
+                </div>
               </div>
             </Card>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Quick Actions */}
             <Card className="p-6 bg-gradient-card border-border/50">
-              <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center">
-                <CreditCard className="h-5 w-5 mr-2" />
-                Quick Actions
-              </h3>
+              <h2 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
               
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Deposit Amount</label>
-                  <Input 
-                    type="number" 
-                    placeholder="Enter amount" 
-                    className="bg-background/50"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                  />
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Deposit Amount (₦)
+                  </label>
+                  <div className="flex space-x-2">
+                    <Input
+                      type="number"
+                      placeholder="Enter amount"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      min="0"
+                    />
+                    <Button 
+                      onClick={handleDeposit} 
+                      disabled={loading || !depositAmount}
+                      className="whitespace-nowrap"
+                    >
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Deposit"}
+                    </Button>
+                  </div>
                 </div>
-                <Button 
-                  variant="hero" 
-                  className="w-full"
-                  onClick={handleDeposit}
-                  disabled={loading}
-                >
-                  <ArrowDownLeft className="h-4 w-4 mr-2" />
-                  Deposit Funds
-                </Button>
-                
-                <div className="border-t border-border/50 pt-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Withdrawal Amount</label>
-                    <Input 
-                      type="number" 
-                      placeholder="Min. 1,000 coins" 
-                      className="bg-background/50"
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Withdraw Amount (₦) - Min: 1,000
+                  </label>
+                  <div className="flex space-x-2">
+                    <Input
+                      type="number"
+                      placeholder="Enter amount"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
+                      min="1000"
+                      max={walletBalance}
                     />
+                    <Button 
+                      onClick={handleWithdrawal} 
+                      disabled={loading || !withdrawAmount || parseInt(withdrawAmount) > walletBalance}
+                      variant="outline"
+                      className="whitespace-nowrap"
+                    >
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Withdraw"}
+                    </Button>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-2"
-                    onClick={handleWithdrawal}
-                    disabled={loading}
-                  >
-                    <ArrowUpRight className="h-4 w-4 mr-2" />
-                    Withdraw Earnings
-                  </Button>
                 </div>
               </div>
             </Card>
 
-            {/* Transaction History */}
+            {/* Recent Transactions */}
             <Card className="p-6 bg-gradient-card border-border/50">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-foreground flex items-center">
-                  <History className="h-5 w-5 mr-2" />
-                  Recent Transactions
-                </h3>
-                <Button variant="ghost" size="sm">
-                  View All
-                </Button>
-              </div>
+              <h2 className="text-xl font-semibold text-foreground mb-4">Recent Transactions</h2>
               
-              <div className="space-y-4">
-                {transactions.length > 0 ? (
-                  transactions.slice(0, 8).map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {transactions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No transactions yet. Start earning or make a deposit!
+                  </p>
+                ) : (
+                  transactions.map((transaction) => (
+                    <div 
+                      key={transaction.id} 
+                      className="flex items-center justify-between p-4 rounded-lg bg-background/50 border border-border/30"
+                    >
                       <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${
-                          transaction.transaction_type === "earn" ? "bg-success/20" :
-                          transaction.transaction_type === "spend" ? "bg-destructive/20" :
-                          "bg-primary/20"
-                        }`}>
-                          {transaction.transaction_type === "earn" ? (
-                            <ArrowDownLeft className="h-4 w-4 text-success" />
-                          ) : transaction.transaction_type === "spend" ? (
-                            <ArrowUpRight className="h-4 w-4 text-destructive" />
-                          ) : (
-                            <CreditCard className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
+                        {getTransactionIcon(transaction.transaction_type)}
                         <div>
-                          <p className="text-sm font-medium text-foreground">
+                          <p className="font-medium text-foreground">
                             {transaction.description}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(transaction.created_at).toLocaleDateString()}
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(transaction.created_at).toLocaleDateString()} •{" "}
+                            <span className={`font-medium ${
+                              transaction.status === 'completed' 
+                                ? 'text-success' 
+                                : transaction.status === 'pending'
+                                ? 'text-accent'
+                                : 'text-destructive'
+                            }`}>
+                              {transaction.status}
+                            </span>
                           </p>
                         </div>
                       </div>
-                      <div className={`text-sm font-bold ${
-                        transaction.amount > 0 ? "text-success" : "text-destructive"
-                      }`}>
-                        {transaction.amount > 0 ? "+" : ""}{transaction.amount.toLocaleString()}
+                      <div className={`font-bold ${getAmountColor(transaction.transaction_type, transaction.amount)}`}>
+                        {transaction.amount > 0 ? '+' : ''}₦{Math.abs(transaction.amount).toLocaleString()}
                       </div>
                     </div>
                   ))
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No transactions yet</p>
-                  </div>
                 )}
               </div>
             </Card>
@@ -302,4 +362,4 @@ const Wallet = () => {
   );
 };
 
-export default Wallet;
+export default WalletPage;

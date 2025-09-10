@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import ContentCard from "@/components/ContentCard";
 import CreateAdModal from "@/components/CreateAdModal";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -23,6 +24,7 @@ const Feed = () => {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -98,9 +100,62 @@ const Feed = () => {
                   type={item.content_type as "job" | "event" | "ad" | "property"}
                   coins={item.reward_coins}
                   image={item.image_url}
-                  onInteraction={() => {
-                    // Handle user interaction and reward coins
-                    // This could be expanded to track interactions in the database
+                  onInteraction={async () => {
+                    try {
+                      // Check if user has already interacted with this content
+                      const { data: existingInteraction } = await supabase
+                        .from("user_interactions")
+                        .select("id")
+                        .eq("user_id", user?.id)
+                        .eq("content_id", item.id)
+                        .eq("interaction_type", "view")
+                        .single();
+
+                      if (existingInteraction) {
+                        return; // User already interacted
+                      }
+
+                      // Record the interaction
+                      const { error: interactionError } = await supabase
+                        .from("user_interactions")
+                        .insert({
+                          user_id: user?.id,
+                          content_id: item.id,
+                          interaction_type: "view",
+                          rewarded: true
+                        });
+
+                      if (interactionError) throw interactionError;
+
+                      // Create transaction for coin reward
+                      const { error: transactionError } = await supabase
+                        .from("transactions")
+                        .insert({
+                          user_id: user?.id,
+                          content_id: item.id,
+                          transaction_type: "earning",
+                          amount: item.reward_coins,
+                          description: `Viewed: ${item.title}`,
+                          status: "completed"
+                        });
+
+                      if (transactionError) throw transactionError;
+
+                      // Update user's coin balance
+                      const { error: profileError } = await supabase
+                        .from("profiles")
+                        .update({ 
+                          coins: (profile?.coins || 0) + item.reward_coins,
+                          total_earnings: (profile?.total_earnings || 0) + item.reward_coins
+                        })
+                        .eq("user_id", user?.id);
+
+                      if (profileError) throw profileError;
+
+                      console.log(`Earned ${item.reward_coins} coins for viewing ${item.title}`);
+                    } catch (error) {
+                      console.error("Error handling interaction:", error);
+                    }
                   }}
                 />
               ))}
