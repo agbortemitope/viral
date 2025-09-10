@@ -23,10 +23,11 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     title: "",
     description: "",
     content_type: "",
-    reward_coins: 0,
-    budget: 0,
+    reward_coins: "",
+    budget: "",
     target_audience: "",
     image_url: "",
+    image_file: null as File | null,
   });
 
   const { user } = useAuth();
@@ -35,9 +36,37 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !profile) return;
+    if (!user || !profile) {
+      toast({
+        title: "Session expired",
+        description: "Please sign in again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    if (profile.coins < formData.budget) {
+    if (!formData.content_type) {
+      toast({
+        title: "Missing ad type",
+        description: "Please select an ad type.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const budget = parseInt(formData.budget, 10);
+    const rewardCoins = parseInt(formData.reward_coins, 10) || 0;
+
+    if (isNaN(budget) || budget < 1) {
+      toast({
+        title: "Invalid budget",
+        description: "Budget must be at least 1 coin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (profile.coins < budget) {
       toast({
         title: "Insufficient coins",
         description: "You don't have enough coins to create this ad.",
@@ -49,10 +78,35 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     setLoading(true);
 
     try {
+      let finalImageUrl = formData.image_url;
+
+      // If a file was uploaded, store it in Supabase storage
+      if (formData.image_file) {
+        const fileName = `${user.id}-${Date.now()}-${formData.image_file.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("ads")
+          .upload(fileName, formData.image_file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrl } = supabase.storage
+          .from("ads")
+          .getPublicUrl(uploadData.path);
+
+        finalImageUrl = publicUrl.publicUrl;
+      }
+
       // Create the ad
       const { error: adError } = await supabase.from("content").insert({
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        content_type: formData.content_type,
+        reward_coins: rewardCoins,
+        budget,
+        target_audience: formData.target_audience,
+        image_url: finalImageUrl || null,
         user_id: user.id,
+        status: "pending",
       });
 
       if (adError) throw adError;
@@ -60,7 +114,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
       // Deduct coins from user's profile
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ coins: profile.coins - formData.budget })
+        .update({ coins: profile.coins - budget })
         .eq("user_id", user.id);
 
       if (updateError) throw updateError;
@@ -69,7 +123,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
       await supabase.from("transactions").insert({
         user_id: user.id,
         transaction_type: "spend",
-        amount: formData.budget,
+        amount: budget,
         description: `Created ${formData.content_type}: ${formData.title}`,
       });
 
@@ -83,13 +137,14 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
         title: "",
         description: "",
         content_type: "",
-        reward_coins: 0,
-        budget: 0,
+        reward_coins: "",
+        budget: "",
         target_audience: "",
         image_url: "",
+        image_file: null,
       });
       setOpen(false);
-      
+
       // Refresh profile and trigger callback
       refetchProfile();
       onAdCreated?.();
@@ -116,7 +171,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
         <DialogHeader>
           <DialogTitle>Create New Ad</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -134,7 +189,6 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
               <Select
                 value={formData.content_type}
                 onValueChange={(value) => setFormData({ ...formData, content_type: value })}
-                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select ad type" />
@@ -162,7 +216,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
           </div>
 
           <div>
-            <Label htmlFor="image_url">Image URL (Optional)</Label>
+            <Label htmlFor="image_url">Image (Optional)</Label>
             <Input
               id="image_url"
               value={formData.image_url}
@@ -170,6 +224,14 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
               placeholder="https://example.com/image.jpg"
               type="url"
             />
+            <div className="mt-2">
+              <Input
+                id="image_file"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFormData({ ...formData, image_file: e.target.files?.[0] || null })}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -180,7 +242,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
                 type="number"
                 min="0"
                 value={formData.reward_coins}
-                onChange={(e) => setFormData({ ...formData, reward_coins: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, reward_coins: e.target.value })}
                 placeholder="10"
               />
             </div>
@@ -191,7 +253,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
                 type="number"
                 min="1"
                 value={formData.budget}
-                onChange={(e) => setFormData({ ...formData, budget: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                 placeholder="100"
                 required
               />
@@ -214,7 +276,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
           </div>
 
           <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading || !user}>
