@@ -27,9 +27,6 @@ interface CreateAdModalProps {
   onAdCreated?: () => void;
 }
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
 const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,40 +37,14 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     reward_coins: "",
     budget: "",
     target_audience: "",
+    location: "",
+    contact_info: "",
     image_url: "",
-    image_file: null as File | null,
   });
 
   const { user } = useAuth();
   const { profile, refetch: refetchProfile } = useProfile();
   const { toast } = useToast();
-
-  const handleFileChange = (file: File | null) => {
-    if (!file) {
-      setFormData({ ...formData, image_file: null });
-      return;
-    }
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload a JPG, PNG, or WEBP image.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      toast({
-        title: "File too large",
-        description: "Max file size is 2MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setFormData({ ...formData, image_file: file });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,24 +90,6 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     setLoading(true);
 
     try {
-      let finalImageUrl = formData.image_url;
-
-      // If a file was uploaded, store it in Supabase storage
-      if (formData.image_file) {
-        const fileName = `${user.id}-${Date.now()}-${formData.image_file.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("ads")
-          .upload(fileName, formData.image_file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: publicUrl } = supabase.storage
-          .from("ads")
-          .getPublicUrl(uploadData.path);
-
-        finalImageUrl = publicUrl.publicUrl;
-      }
-
       // Create the ad
       const { error: adError } = await supabase.from("content").insert({
         title: formData.title,
@@ -145,7 +98,9 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
         reward_coins: rewardCoins,
         budget,
         target_audience: formData.target_audience,
-        image_url: finalImageUrl || null,
+        location: formData.location,
+        contact_info: formData.contact_info,
+        image_url: formData.image_url || null,
         user_id: user.id,
         status: "pending",
       });
@@ -181,8 +136,9 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
         reward_coins: "",
         budget: "",
         target_audience: "",
+        location: "",
+        contact_info: "",
         image_url: "",
-        image_file: null,
       });
       setOpen(false);
 
@@ -264,6 +220,32 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
             />
           </div>
 
+          {/* Location & Contact */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={formData.location}
+                onChange={(e) =>
+                  setFormData({ ...formData, location: e.target.value })
+                }
+                placeholder="City, State or Address"
+              />
+            </div>
+            <div>
+              <Label htmlFor="contact_info">Contact Info</Label>
+              <Input
+                id="contact_info"
+                value={formData.contact_info}
+                onChange={(e) =>
+                  setFormData({ ...formData, contact_info: e.target.value })
+                }
+                placeholder="Email or Phone"
+              />
+            </div>
+          </div>
+
           {/* Image Input */}
           <div>
             <Label htmlFor="image_url">Image (Optional)</Label>
@@ -276,30 +258,6 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
               placeholder="https://example.com/image.jpg"
               type="url"
             />
-            <div className="mt-2">
-              <Input
-                id="image_file"
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-              />
-            </div>
-
-            {/* Image Preview */}
-            {(formData.image_url || formData.image_file) && (
-              <div className="mt-4">
-                <Label>Preview</Label>
-                <img
-                  src={
-                    formData.image_file
-                      ? URL.createObjectURL(formData.image_file)
-                      : formData.image_url
-                  }
-                  alt="Preview"
-                  className="mt-2 max-h-48 rounded border"
-                />
-              </div>
-            )}
           </div>
 
           {/* Reward & Budget */}

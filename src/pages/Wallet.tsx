@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Coins, ArrowUpCircle, ArrowDownCircle, Loader2, Wallet } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
@@ -10,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getUserLocation, convertCurrency, formatCurrency, getAllCurrencies } from "@/lib/currency";
 
 interface Transaction {
   id: string;
@@ -28,13 +30,28 @@ const WalletPage = () => {
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userCurrency, setUserCurrency] = useState("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [locationLoading, setLocationLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchTransactions();
+      detectUserLocation();
     }
   }, [user]);
 
+  const detectUserLocation = async () => {
+    try {
+      const location = await getUserLocation();
+      setUserCurrency(location.currency);
+      setSelectedCurrency(location.currency);
+    } catch (error) {
+      console.error("Failed to detect location:", error);
+    } finally {
+      setLocationLoading(false);
+    }
+  };
   const fetchTransactions = async () => {
     try {
       const { data, error } = await supabase
@@ -71,7 +88,7 @@ const WalletPage = () => {
           user_id: user?.id,
           transaction_type: "deposit",
           amount: amount,
-          description: `Deposit of ₦${amount.toLocaleString()}`,
+          description: `Deposit of ${formatCurrency(amount, selectedCurrency)}`,
           status: "completed"
         });
 
@@ -89,7 +106,7 @@ const WalletPage = () => {
 
       toast({
         title: "Deposit successful!",
-        description: `₦${amount.toLocaleString()} has been added to your wallet`,
+        description: `${formatCurrency(amount, selectedCurrency)} has been added to your wallet`,
       });
 
       setDepositAmount("");
@@ -119,7 +136,7 @@ const WalletPage = () => {
     if (amount < 1000) {
       toast({
         title: "Minimum withdrawal",
-        description: "Minimum withdrawal amount is ₦1,000",
+        description: `Minimum withdrawal amount is ${formatCurrency(1000, selectedCurrency)}`,
         variant: "destructive",
       });
       return;
@@ -143,7 +160,7 @@ const WalletPage = () => {
           user_id: user?.id,
           transaction_type: "withdrawal",
           amount: -amount, // Negative for withdrawal
-          description: `Withdrawal of ₦${amount.toLocaleString()}`,
+          description: `Withdrawal of ${formatCurrency(amount, selectedCurrency)}`,
           status: "pending" // Withdrawals start as pending for review
         });
 
@@ -161,7 +178,7 @@ const WalletPage = () => {
 
       toast({
         title: "Withdrawal request submitted!",
-        description: `Your request for ₦${amount.toLocaleString()} is being processed`,
+        description: `Your request for ${formatCurrency(amount, selectedCurrency)} is being processed`,
       });
 
       setWithdrawAmount("");
@@ -183,6 +200,9 @@ const WalletPage = () => {
     .reduce((sum, t) => sum + t.amount, 0);
   const withdrawableAmount = walletBalance - pendingEarnings;
 
+  const convertedBalance = convertCurrency(walletBalance, "USD", selectedCurrency);
+  const convertedPending = convertCurrency(pendingEarnings, "USD", selectedCurrency);
+  const convertedWithdrawable = convertCurrency(Math.max(0, withdrawableAmount), "USD", selectedCurrency);
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'earning':
@@ -200,6 +220,21 @@ const WalletPage = () => {
     return 'text-success';
   };
 
+  if (locationLoading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-gradient-page">
+          <Header />
+          <div className="container mx-auto px-4 py-8">
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          </div>
+          <Footer />
+        </div>
+      </ProtectedRoute>
+    );
+  }
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-page">
@@ -211,6 +246,29 @@ const WalletPage = () => {
             <h1 className="text-3xl font-bold text-foreground">Wallet</h1>
           </div>
 
+          {/* Currency Selector */}
+          <Card className="p-4 mb-6 bg-gradient-card border-border/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-foreground">Display Currency</h3>
+                <p className="text-sm text-muted-foreground">
+                  Auto-detected: {userCurrency} (based on your location)
+                </p>
+              </div>
+              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAllCurrencies().map((currency) => (
+                    <SelectItem key={currency.code} value={currency.code}>
+                      {currency.code} ({currency.symbol})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
           {/* Balance Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="p-6 bg-gradient-card border-border/50">
@@ -221,8 +279,13 @@ const WalletPage = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Balance</p>
                   <p className="text-2xl font-bold text-foreground">
-                    ₦{walletBalance.toLocaleString()}
+                    {formatCurrency(convertedBalance, selectedCurrency)}
                   </p>
+                  {selectedCurrency !== "USD" && (
+                    <p className="text-xs text-muted-foreground">
+                      {walletBalance} coins
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
@@ -235,7 +298,7 @@ const WalletPage = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Pending Earnings</p>
                   <p className="text-2xl font-bold text-foreground">
-                    ₦{pendingEarnings.toLocaleString()}
+                    {formatCurrency(convertedPending, selectedCurrency)}
                   </p>
                 </div>
               </div>
@@ -249,7 +312,7 @@ const WalletPage = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Withdrawable</p>
                   <p className="text-2xl font-bold text-foreground">
-                    ₦{Math.max(0, withdrawableAmount).toLocaleString()}
+                    {formatCurrency(convertedWithdrawable, selectedCurrency)}
                   </p>
                 </div>
               </div>
@@ -264,7 +327,7 @@ const WalletPage = () => {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Deposit Amount (₦)
+                    Deposit Amount ({selectedCurrency})
                   </label>
                   <div className="flex space-x-2">
                     <Input
@@ -286,7 +349,7 @@ const WalletPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Withdraw Amount (₦) - Min: 1,000
+                    Withdraw Amount ({selectedCurrency}) - Min: {formatCurrency(1000, selectedCurrency)}
                   </label>
                   <div className="flex space-x-2">
                     <Input
@@ -346,7 +409,7 @@ const WalletPage = () => {
                         </div>
                       </div>
                       <div className={`font-bold ${getAmountColor(transaction.transaction_type, transaction.amount)}`}>
-                        {transaction.amount > 0 ? '+' : ''}₦{Math.abs(transaction.amount).toLocaleString()}
+                        {transaction.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(convertCurrency(transaction.amount, "USD", selectedCurrency)), selectedCurrency)}
                       </div>
                     </div>
                   ))

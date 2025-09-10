@@ -6,6 +6,9 @@ import {
   ArrowRight,
   CheckCircle,
   Image as ImageIcon,
+  MapPin,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -15,8 +18,11 @@ interface ContentCardProps {
   type?: "job" | "event" | "ad" | "property";
   coins?: number;
   image?: string;
+  location?: string;
+  contactInfo?: string;
   onInteraction?: () => Promise<void>;
   loading?: boolean;
+  hasInteracted?: boolean;
 }
 
 const ContentCard = ({
@@ -25,11 +31,13 @@ const ContentCard = ({
   type,
   coins = 0,
   image,
+  location,
+  contactInfo,
   onInteraction,
   loading = false,
+  hasInteracted = false,
 }: ContentCardProps) => {
   const [isInteracting, setIsInteracting] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -39,7 +47,6 @@ const ContentCard = ({
     setIsInteracting(true);
     try {
       await onInteraction();
-      setHasInteracted(true);
     } catch (error) {
       console.error("Error during interaction:", error);
     } finally {
@@ -73,6 +80,7 @@ const ContentCard = ({
     }
   };
 
+  const isEmail = (contact: string) => contact.includes('@');
   if (loading) {
     // Skeleton loader mode with staggered shimmer
     return (
@@ -114,7 +122,7 @@ const ContentCard = ({
   }
 
   return (
-    <Card className="p-6 bg-gradient-card border-border/50 hover:shadow-card transition-all duration-300 hover:border-primary/20">
+    <Card className="p-6 bg-gradient-card border-border/50 hover:shadow-card transition-all duration-300 hover:border-primary/20 group">
       <div className="flex items-start justify-between mb-4">
         <Badge className={getTypeColor()}>{getTypeName()}</Badge>
         {coins > 0 && (
@@ -138,7 +146,7 @@ const ContentCard = ({
               alt={title}
               onError={() => setImageError(true)}
               onLoad={() => setImageLoaded(true)}
-              className={`w-full h-48 object-cover transition-opacity duration-300 ${
+              className={`w-full h-48 object-cover transition-all duration-300 group-hover:scale-105 ${
                 imageLoaded ? "opacity-100" : "opacity-0 absolute"
               }`}
             />
@@ -153,6 +161,26 @@ const ContentCard = ({
       <div className="space-y-3">
         <h3 className="text-xl font-semibold text-foreground">{title}</h3>
         <p className="text-muted-foreground line-clamp-3">{description}</p>
+
+        {/* Location and Contact Info */}
+        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+          {location && (
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              <span>{location}</span>
+            </div>
+          )}
+          {contactInfo && (
+            <div className="flex items-center gap-1">
+              {isEmail(contactInfo) ? (
+                <Mail className="h-3 w-3" />
+              ) : (
+                <Phone className="h-3 w-3" />
+              )}
+              <span>{contactInfo}</span>
+            </div>
+          )}
+        </div>
 
         {coins > 0 && (
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">

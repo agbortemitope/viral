@@ -36,10 +36,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-3">Support</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Creator Guide</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Community</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Contact Us</a></li>
+              <li><Link to="/support/help-center" className="hover:text-foreground transition-colors">Help Center</Link></li>
+              <li><Link to="/support/creator-guide" className="hover:text-foreground transition-colors">Creator Guide</Link></li>
+              <li><Link to="/support/community" className="hover:text-foreground transition-colors">Community</Link></li>
+              <li><Link to="/support/contact-us" className="hover:text-foreground transition-colors">Contact Us</Link></li>
             </ul>
           </div>
           
@@ -47,17 +47,17 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-3">Legal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Creator Agreement</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Cookie Policy</a></li>
+              <li><Link to="/legal/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/legal/terms-of-service" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
+              <li><Link to="/legal/creator-agreement" className="hover:text-foreground transition-colors">Creator Agreement</Link></li>
+              <li><Link to="/legal/cookie-policy" className="hover:text-foreground transition-colors">Cookie Policy</Link></li>
             </ul>
           </div>
         </div>
         
         <div className="border-t border-border/50 pt-8 mt-8 flex flex-col md:flex-row items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            © 2024 OpportunityHub. All rights reserved.
+            © 2024 Viral. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
