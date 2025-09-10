@@ -74,19 +74,40 @@ const ContentCard = ({
   };
 
   if (loading) {
-    // Skeleton loader mode
+    // Skeleton loader mode with staggered shimmer
     return (
-      <Card className="p-6 bg-gradient-card border-border/50 animate-pulse">
+      <Card className="p-6 bg-gradient-card border-border/50">
         <div className="flex items-start justify-between mb-4">
-          <div className="h-5 w-16 bg-muted rounded-full" />
-          <div className="h-5 w-10 bg-muted rounded-full" />
+          <div
+            className="h-5 w-16 bg-muted rounded-full animate-pulse"
+            style={{ animationDelay: "0.1s" }}
+          />
+          <div
+            className="h-5 w-10 bg-muted rounded-full animate-pulse"
+            style={{ animationDelay: "0.2s" }}
+          />
         </div>
-        <div className="w-full h-48 bg-muted rounded-md mb-4" />
+        <div
+          className="w-full h-48 bg-muted rounded-md mb-4 animate-pulse"
+          style={{ animationDelay: "0.3s" }}
+        />
         <div className="space-y-3">
-          <div className="h-5 w-2/3 bg-muted rounded" />
-          <div className="h-4 w-full bg-muted rounded" />
-          <div className="h-4 w-5/6 bg-muted rounded" />
-          <div className="h-9 w-full bg-muted rounded mt-4" />
+          <div
+            className="h-5 w-2/3 bg-muted rounded animate-pulse"
+            style={{ animationDelay: "0.4s" }}
+          />
+          <div
+            className="h-4 w-full bg-muted rounded animate-pulse"
+            style={{ animationDelay: "0.5s" }}
+          />
+          <div
+            className="h-4 w-5/6 bg-muted rounded animate-pulse"
+            style={{ animationDelay: "0.6s" }}
+          />
+          <div
+            className="h-9 w-full bg-muted rounded mt-4 animate-pulse"
+            style={{ animationDelay: "0.7s" }}
+          />
         </div>
       </Card>
     );

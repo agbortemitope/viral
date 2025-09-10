@@ -7,7 +7,6 @@ import CreateAdModal from "@/components/CreateAdModal";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 
 interface ContentItem {
   id: string;
@@ -22,6 +21,7 @@ interface ContentItem {
 const Feed = () => {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [skeletonCount, setSkeletonCount] = useState(3);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -41,6 +41,9 @@ const Feed = () => {
 
       if (error) throw error;
       setContent(data || []);
+
+      // update skeleton count based on expected results
+      setSkeletonCount(data?.length && data.length > 0 ? data.length : 3);
     } catch (error) {
       console.error("Error fetching content:", error);
     } finally {
@@ -54,16 +57,26 @@ const Feed = () => {
     }
   }, [user]);
 
-  if (authLoading || loading) {
+  const renderSkeletons = () => (
+    <div className="space-y-6">
+      {Array.from({ length: skeletonCount }).map((_, i) => (
+        <div
+          key={i}
+          style={{ animationDelay: `${i * 0.15}s` }}
+          className="animate-pulse"
+        >
+          <ContentCard loading />
+        </div>
+      ))}
+    </div>
+  );
+
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-page">
         <Header />
         <main className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          </div>
+          <div className="max-w-2xl mx-auto">{renderSkeletons()}</div>
         </main>
         <Footer />
       </div>
@@ -86,7 +99,9 @@ const Feed = () => {
             <CreateAdModal onAdCreated={fetchContent} />
           </div>
 
-          {content.length === 0 ? (
+          {loading ? (
+            renderSkeletons()
+          ) : content.length === 0 ? (
             <Card className="p-8 text-center bg-gradient-card border-border/50">
               <p className="text-muted-foreground">
                 No opportunities available yet. Be the first to create one!
@@ -102,9 +117,11 @@ const Feed = () => {
                   type={item.content_type as "job" | "event" | "ad" | "property"}
                   coins={item.reward_coins}
                   image={item.image_url}
-                  onInteraction={() => {
-                    // Handle user interaction and reward coins
-                  }}
+                  onInteraction={() =>
+                    Promise.resolve(
+                      console.log(`User interacted with ${item.title}`)
+                    )
+                  }
                 />
               ))}
             </div>
