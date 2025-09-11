@@ -30,15 +30,9 @@ const SignUp = () => {
 
     try {
       if (isSignUp) {
-        const result = await signUp(email, password, fullName);
-        if (result.data?.session) {
-          navigate("/feed");
-        }
+        await signUp(email, password, fullName);
       } else {
-        const result = await signIn(email, password);
-        if (result.data?.session) {
-          navigate("/feed");
-        }
+        await signIn(email, password);
       }
     } catch (error) {
       console.error('Authentication error:', error);

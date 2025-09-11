@@ -69,7 +69,9 @@ const WalletPage = () => {
   };
 
   const handleDeposit = async () => {
-    const amount = parseInt(depositAmount);
+    const displayAmount = parseFloat(depositAmount);
+    const amount = processDeposit(displayAmount);
+    
     if (!amount || amount <= 0) {
       toast({
         title: "Invalid amount",
@@ -88,7 +90,7 @@ const WalletPage = () => {
           user_id: user?.id,
           transaction_type: "deposit",
           amount: amount,
-          description: `Deposit of ${formatCurrency(amount, selectedCurrency)}`,
+          description: `Deposit of ${formatCurrency(displayAmount, selectedCurrency)}`,
           status: "completed"
         });
 
@@ -106,7 +108,7 @@ const WalletPage = () => {
 
       toast({
         title: "Deposit successful!",
-        description: `${formatCurrency(amount, selectedCurrency)} has been added to your wallet`,
+        description: `${formatCurrency(displayAmount, selectedCurrency)} has been added to your wallet`,
       });
 
       setDepositAmount("");
@@ -123,7 +125,9 @@ const WalletPage = () => {
   };
 
   const handleWithdrawal = async () => {
-    const amount = parseInt(withdrawAmount);
+    const displayAmount = parseFloat(withdrawAmount);
+    const amount = processWithdrawal(displayAmount);
+    
     if (!amount || amount <= 0) {
       toast({
         title: "Invalid amount",
@@ -133,10 +137,11 @@ const WalletPage = () => {
       return;
     }
 
-    if (amount < 1000) {
+    const minWithdrawal = processWithdrawal(convertCurrency(1000, "USD", selectedCurrency));
+    if (amount < minWithdrawal) {
       toast({
         title: "Minimum withdrawal",
-        description: `Minimum withdrawal amount is ${formatCurrency(1000, selectedCurrency)}`,
+        description: `Minimum withdrawal amount is ${formatCurrency(convertCurrency(1000, "USD", selectedCurrency), selectedCurrency)}`,
         variant: "destructive",
       });
       return;
@@ -160,7 +165,7 @@ const WalletPage = () => {
           user_id: user?.id,
           transaction_type: "withdrawal",
           amount: -amount, // Negative for withdrawal
-          description: `Withdrawal of ${formatCurrency(amount, selectedCurrency)}`,
+          description: `Withdrawal of ${formatCurrency(displayAmount, selectedCurrency)}`,
           status: "pending" // Withdrawals start as pending for review
         });
 
@@ -178,7 +183,7 @@ const WalletPage = () => {
 
       toast({
         title: "Withdrawal request submitted!",
-        description: `Your request for ${formatCurrency(amount, selectedCurrency)} is being processed`,
+        description: `Your request for ${formatCurrency(displayAmount, selectedCurrency)} is being processed`,
       });
 
       setWithdrawAmount("");
@@ -203,6 +208,18 @@ const WalletPage = () => {
   const convertedBalance = convertCurrency(walletBalance, "USD", selectedCurrency);
   const convertedPending = convertCurrency(pendingEarnings, "USD", selectedCurrency);
   const convertedWithdrawable = convertCurrency(Math.max(0, withdrawableAmount), "USD", selectedCurrency);
+
+  // Convert deposit/withdrawal amounts for processing
+  const processDeposit = (amount: number) => {
+    // Convert from selected currency to USD (base currency)
+    return Math.round(convertCurrency(amount, selectedCurrency, "USD"));
+  };
+
+  const processWithdrawal = (amount: number) => {
+    // Convert from selected currency to USD (base currency)
+    return Math.round(convertCurrency(amount, selectedCurrency, "USD"));
+  };
+
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'earning':
@@ -349,7 +366,7 @@ const WalletPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Withdraw Amount ({selectedCurrency}) - Min: {formatCurrency(1000, selectedCurrency)}
+                    Withdraw Amount ({selectedCurrency}) - Min: {formatCurrency(convertCurrency(1000, "USD", selectedCurrency), selectedCurrency)}
                   </label>
                   <div className="flex space-x-2">
                     <Input
@@ -357,12 +374,12 @@ const WalletPage = () => {
                       placeholder="Enter amount"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
-                      min="1000"
+                      min={convertCurrency(1000, "USD", selectedCurrency)}
                       max={walletBalance}
                     />
                     <Button 
                       onClick={handleWithdrawal} 
-                      disabled={loading || !withdrawAmount || parseInt(withdrawAmount) > walletBalance}
+                      disabled={loading || !withdrawAmount || processWithdrawal(parseFloat(withdrawAmount)) > walletBalance}
                       variant="outline"
                       className="whitespace-nowrap"
                     >

@@ -49,7 +49,7 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/feed`;
+      const redirectUrl = `${window.location.origin}/?type=signup`;
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -75,6 +75,7 @@ export const useAuth = () => {
           title: "Account created!",
           description: "Welcome to Viral! You're now signed in.",
         });
+        navigate('/feed');
       }
 
       return { data, error: null };
@@ -102,6 +103,7 @@ export const useAuth = () => {
         description: "You have successfully signed in.",
       });
 
+      navigate('/feed');
       return { data, error: null };
     } catch (error: any) {
       toast({

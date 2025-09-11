@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface CreateAdModalProps {
   onAdCreated?: () => void;
@@ -91,7 +92,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
 
     try {
       // Create the ad
-      const { error: adError } = await supabase.from("content").insert({
+      const { data: adData, error: adError } = await supabase.from("content").insert({
         title: formData.title,
         description: formData.description,
         content_type: formData.content_type,
@@ -103,7 +104,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
         image_url: formData.image_url || null,
         user_id: user.id,
         status: "pending",
-      });
+      }).select().single();
 
       if (adError) throw adError;
 
@@ -119,8 +120,9 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
       await supabase.from("transactions").insert({
         user_id: user.id,
         transaction_type: "spend",
-        amount: budget,
+        amount: -budget,
         description: `Created ${formData.content_type}: ${formData.title}`,
+        content_id: adData?.id,
       });
 
       toast({
@@ -258,6 +260,18 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
               placeholder="https://example.com/image.jpg"
               type="url"
             />
+            {formData.image_url && (
+              <div className="mt-2">
+                <img 
+                  src={formData.image_url} 
+                  alt="Preview" 
+                  className="w-full h-32 object-cover rounded-md border"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Reward & Budget */}
@@ -320,7 +334,14 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
               Cancel
             </Button>
             <Button type="submit" disabled={loading || !user}>
-              {loading ? "Creating..." : "Create Ad"}
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Ad"
+              )}
             </Button>
           </div>
         </form>

@@ -3,6 +3,7 @@ import { Coins, LogOut, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Link, useNavigate } from "react-router-dom";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 
 const Header = () => {
   const { user, signOut } = useAuth();
@@ -57,6 +58,7 @@ const Header = () => {
                     {profile?.full_name || user.email}
                   </span>
                 </div>
+                <ModeToggle />
                 <Button variant="outline" size="sm" onClick={handleSignOut}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
@@ -64,6 +66,7 @@ const Header = () => {
               </>
             ) : (
               <>
+                <ModeToggle />
                 <Link to="/signup">
                   <Button variant="outline">Sign In</Button>
                 </Link>

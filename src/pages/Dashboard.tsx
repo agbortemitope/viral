@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,7 +115,6 @@ const Dashboard = () => {
               <p className="text-muted-foreground">Manage your account and track your activity</p>
             </div>
             <div className="flex items-center gap-4">
-              <ModeToggle />
               <CreateAdModal onAdCreated={fetchUserData} />
             </div>
           </div>

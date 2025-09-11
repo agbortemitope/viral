@@ -22,6 +22,10 @@ const CURRENCY_RATES: Record<string, CurrencyRate> = {
   AUD: { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.35 },
   JPY: { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 110 },
   INR: { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 74 },
+  ZAR: { code: 'ZAR', name: 'South African Rand', symbol: 'R', rate: 15 },
+  KES: { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh', rate: 110 },
+  GHS: { code: 'GHS', name: 'Ghanaian Cedi', symbol: '₵', rate: 6 },
+  EGP: { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£', rate: 31 },
 };
 
 // Country to currency mapping
@@ -33,11 +37,20 @@ const COUNTRY_CURRENCY_MAP: Record<string, string> = {
   JP: 'JPY',
   IN: 'INR',
   NG: 'NGN',
+  ZA: 'ZAR',
+  KE: 'KES',
+  GH: 'GHS',
+  EG: 'EGP',
   DE: 'EUR',
   FR: 'EUR',
   IT: 'EUR',
   ES: 'EUR',
   NL: 'EUR',
+  AT: 'EUR',
+  BE: 'EUR',
+  FI: 'EUR',
+  IE: 'EUR',
+  PT: 'EUR',
 };
 
 export async function getUserLocation(): Promise<LocationData> {
@@ -74,7 +87,7 @@ export function convertCurrency(amount: number, fromCurrency: string, toCurrency
   
   // Convert to USD first, then to target currency
   const usdAmount = amount / fromRate;
-  return usdAmount * toRate;
+  return Math.round(usdAmount * toRate * 100) / 100; // Round to 2 decimal places
 }
 
 export function formatCurrency(amount: number, currency: string): string {
