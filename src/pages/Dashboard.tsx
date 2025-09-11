@@ -5,6 +5,7 @@ import MetricsCard from "@/components/MetricsCard";
 import CreateAdModal from "@/components/CreateAdModal";
 import AccountSettings from "@/components/dashboard/AccountSettings";
 import DashboardCalendar from "@/components/dashboard/Calendar";
+import Portfolio from "@/components/dashboard/Portfolio";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,8 @@ import {
   Edit3,
   Star,
   Award,
-  Plus
+  Plus,
+  Briefcase as PortfolioIcon
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -120,8 +122,9 @@ const Dashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
               <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -237,6 +240,10 @@ const Dashboard = () => {
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="portfolio">
+              <Portfolio />
             </TabsContent>
 
             <TabsContent value="calendar">

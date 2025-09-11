@@ -65,38 +65,95 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          project_url: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          project_url?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          project_url?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          available: boolean | null
           avatar_url: string | null
           bio: string | null
+          categories: string[] | null
           coins: number
           created_at: string
           full_name: string | null
+          hourly_rate: number | null
           id: string
+          portfolio_description: string | null
+          portfolio_title: string | null
+          skills: string[] | null
           total_earnings: number
           updated_at: string
           user_id: string
           username: string | null
         }
         Insert: {
+          available?: boolean | null
           avatar_url?: string | null
           bio?: string | null
+          categories?: string[] | null
           coins?: number
           created_at?: string
           full_name?: string | null
+          hourly_rate?: number | null
           id?: string
+          portfolio_description?: string | null
+          portfolio_title?: string | null
+          skills?: string[] | null
           total_earnings?: number
           updated_at?: string
           user_id: string
           username?: string | null
         }
         Update: {
+          available?: boolean | null
           avatar_url?: string | null
           bio?: string | null
+          categories?: string[] | null
           coins?: number
           created_at?: string
           full_name?: string | null
+          hourly_rate?: number | null
           id?: string
+          portfolio_description?: string | null
+          portfolio_title?: string | null
+          skills?: string[] | null
           total_earnings?: number
           updated_at?: string
           user_id?: string

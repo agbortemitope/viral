@@ -11,6 +11,12 @@ interface Profile {
   bio: string | null;
   coins: number;
   total_earnings: number;
+  skills: string[];
+  categories: string[];
+  portfolio_title: string | null;
+  portfolio_description: string | null;
+  hourly_rate: number;
+  available: boolean;
   created_at: string;
   updated_at: string;
 }
