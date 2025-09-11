@@ -40,12 +40,13 @@ const Marketplace = () => {
         .from("content")
         .select("*")
         .in("status", ["approved", "active"])
+        .in("content_type", ["design", "video_editing", "content_creation", "web_development", "marketing"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       setItems(data || []);
     } catch (error) {
-      console.error("Error fetching marketplace items:", error);
+      console.error("Error fetching creative opportunities:", error);
     } finally {
       setLoading(false);
     }
@@ -60,10 +61,11 @@ const Marketplace = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "job": return "bg-success/20 text-success border-success/30";
-      case "event": return "bg-accent/20 text-accent border-accent/30"; 
-      case "ad": return "bg-primary/20 text-primary border-primary/30";
-      case "property": return "bg-secondary/20 text-secondary border-secondary/30";
+      case "design": return "bg-primary/20 text-primary border-primary/30";
+      case "video_editing": return "bg-accent/20 text-accent border-accent/30"; 
+      case "content_creation": return "bg-success/20 text-success border-success/30";
+      case "web_development": return "bg-secondary/20 text-secondary border-secondary/30";
+      case "marketing": return "bg-warning/20 text-warning border-warning/30";
       default: return "bg-muted/20 text-muted-foreground border-muted/30";
     }
   };
@@ -90,8 +92,8 @@ const Marketplace = () => {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Marketplace</h1>
-            <p className="text-muted-foreground">Discover opportunities and earn coins</p>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Creative Marketplace</h1>
+            <p className="text-muted-foreground">Where brands find talented creators, designers, and developers</p>
           </div>
 
           {/* Search and Filters */}
@@ -99,7 +101,7 @@ const Marketplace = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search opportunities..."
+                placeholder="Search creative opportunities..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -112,35 +114,42 @@ const Marketplace = () => {
                 onClick={() => setSelectedType("all")}
                 size="sm"
               >
-                All
+                All Opportunities
               </Button>
               <Button
-                variant={selectedType === "job" ? "default" : "outline"}
-                onClick={() => setSelectedType("job")}
+                variant={selectedType === "design" ? "default" : "outline"}
+                onClick={() => setSelectedType("design")}
                 size="sm"
               >
-                Jobs
+                Design
               </Button>
               <Button
-                variant={selectedType === "event" ? "default" : "outline"}
-                onClick={() => setSelectedType("event")}
+                variant={selectedType === "video_editing" ? "default" : "outline"}
+                onClick={() => setSelectedType("video_editing")}
                 size="sm"
               >
-                Events
+                Video Editing
               </Button>
               <Button
-                variant={selectedType === "ad" ? "default" : "outline"}
-                onClick={() => setSelectedType("ad")}
+                variant={selectedType === "content_creation" ? "default" : "outline"}
+                onClick={() => setSelectedType("content_creation")}
                 size="sm"
               >
-                Ads
+                Content Creation
               </Button>
               <Button
-                variant={selectedType === "property" ? "default" : "outline"}
-                onClick={() => setSelectedType("property")}
+                variant={selectedType === "web_development" ? "default" : "outline"}
+                onClick={() => setSelectedType("web_development")}
                 size="sm"
               >
-                Property
+                Web Development
+              </Button>
+              <Button
+                variant={selectedType === "marketing" ? "default" : "outline"}
+                onClick={() => setSelectedType("marketing")}
+                size="sm"
+              >
+                Marketing
               </Button>
             </div>
           </div>
@@ -150,8 +159,11 @@ const Marketplace = () => {
             {filteredItems.length === 0 ? (
               <div className="col-span-full">
                 <Card className="p-8 text-center bg-gradient-card border-border/50">
-                  <p className="text-muted-foreground">
-                    No items found matching your criteria.
+                  <p className="text-muted-foreground mb-2">
+                    No creative opportunities found matching your criteria.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Check back soon for new projects from brands looking for talented creators!
                   </p>
                 </Card>
               </div>
@@ -170,7 +182,7 @@ const Marketplace = () => {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <Badge className={getTypeColor(item.content_type)}>
-                        {item.content_type}
+                        {item.content_type.replace('_', ' ')}
                       </Badge>
                       <div className="flex items-center space-x-1 bg-gradient-earnings px-2 py-1 rounded-full">
                         <Coins className="h-3 w-3" />
@@ -184,15 +196,15 @@ const Marketplace = () => {
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Building className="h-4 w-4 mr-2" />
-                        Budget: ₦{item.budget.toLocaleString()}
+                        Project Budget: ₦{item.budget.toLocaleString()}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-2" />
-                        {new Date(item.created_at).toLocaleDateString()}
+                        Posted: {new Date(item.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <Button className="w-full" variant="outline">
-                      Apply Now
+                      Submit Proposal
                     </Button>
                   </CardContent>
                 </Card>
