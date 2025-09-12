@@ -137,15 +137,6 @@ const WalletPage = () => {
       return;
     }
 
-    const minWithdrawal = processWithdrawal(convertCurrency(1000, "USD", selectedCurrency));
-    if (amount < minWithdrawal) {
-      toast({
-        title: "Minimum withdrawal",
-        description: `Minimum withdrawal amount is ${formatCurrency(convertCurrency(1000, "USD", selectedCurrency), selectedCurrency)}`,
-        variant: "destructive",
-      });
-      return;
-    }
 
     if (amount > (profile?.coins || 0)) {
       toast({
@@ -366,7 +357,7 @@ const WalletPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Withdraw Amount ({selectedCurrency}) - Min: {formatCurrency(convertCurrency(1000, "USD", selectedCurrency), selectedCurrency)}
+                    Withdraw Amount ({selectedCurrency})
                   </label>
                   <div className="flex space-x-2">
                     <Input
@@ -374,7 +365,7 @@ const WalletPage = () => {
                       placeholder="Enter amount"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
-                      min={convertCurrency(1000, "USD", selectedCurrency)}
+                      min="0"
                       max={walletBalance}
                     />
                     <Button 

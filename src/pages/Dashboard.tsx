@@ -4,14 +4,15 @@ import Footer from "@/components/Footer";
 import MetricsCard from "@/components/MetricsCard";
 import CreateAdModal from "@/components/CreateAdModal";
 import AccountSettings from "@/components/dashboard/AccountSettings";
-import DashboardCalendar from "@/components/dashboard/Calendar";
 import Portfolio from "@/components/dashboard/Portfolio";
+import Analytics from "@/components/dashboard/Analytics";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +38,9 @@ const Dashboard = () => {
   const { profile } = useProfile();
   const [userContent, setUserContent] = useState([]);
   const [userTransactions, setUserTransactions] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
+  const [dateRange, setDateRange] = useState("30");
 
   useEffect(() => {
     if (user) {
@@ -45,24 +48,60 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  const fetchUserData = async () => {
+  const fetchUserData = async (days: number = 30) => {
     try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
       // Fetch user's content
       const { data: contentData } = await supabase
         .from("content")
         .select("*")
         .eq("user_id", user?.id);
 
-      // Fetch user's transactions
+      // Fetch user's transactions with date filter
       const { data: transactionData } = await supabase
         .from("transactions")
         .select("*")
         .eq("user_id", user?.id)
+        .gte("created_at", startDate.toISOString())
         .order("created_at", { ascending: false })
         .limit(10);
 
+      // Fetch recent activity (interactions + transactions)
+      const { data: interactionData } = await supabase
+        .from("user_interactions")
+        .select(`
+          *,
+          content:content_id (title, content_type)
+        `)
+        .eq("user_id", user?.id)
+        .gte("created_at", startDate.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      const activity = [
+        ...(transactionData || []).map(t => ({
+          id: t.id,
+          type: 'transaction',
+          description: t.description,
+          amount: t.amount,
+          created_at: t.created_at,
+          status: t.status
+        })),
+        ...(interactionData || []).map(i => ({
+          id: i.id,
+          type: 'interaction',
+          description: `Interacted with ${i.content?.title || 'content'}`,
+          interaction_type: i.interaction_type,
+          created_at: i.created_at,
+          rewarded: i.rewarded
+        }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+
       setUserContent(contentData || []);
       setUserTransactions(transactionData || []);
+      setRecentActivity(activity);
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
@@ -120,10 +159,9 @@ const Dashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
@@ -186,10 +224,20 @@ const Dashboard = () => {
                         <h2 className="text-2xl font-bold text-foreground">Overview</h2>
                         <p className="text-muted-foreground">Track your activity and earnings</p>
                       </div>
-                      <Button variant="outline" size="sm">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Last 30 days
-                      </Button>
+                      <Select value={dateRange} onValueChange={(value) => {
+                        setDateRange(value);
+                        fetchUserData(parseInt(value));
+                      }}>
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="7">Last 7 days</SelectItem>
+                          <SelectItem value="30">Last 30 days</SelectItem>
+                          <SelectItem value="90">Last 90 days</SelectItem>
+                          <SelectItem value="365">Last year</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,36 +273,45 @@ const Dashboard = () => {
                   <Card className="p-6 bg-gradient-card border-border/50">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-lg font-semibold text-foreground">
-                        Recent Transactions
+                        Recent Account Activity
                       </h3>
                       <Button variant="ghost" size="sm">
                         <BarChart3 className="h-4 w-4" />
                       </Button>
                     </div>
                     
-                    {userTransactions.length > 0 ? (
+                    {recentActivity.length > 0 ? (
                       <div className="space-y-3">
-                        {userTransactions.slice(0, 5).map((transaction) => (
-                          <div key={transaction.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/30">
+                        {recentActivity.map((activity) => (
+                          <div key={`${activity.type}-${activity.id}`} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/30">
                             <div>
                               <p className="text-sm font-medium text-foreground">
-                                {transaction.description}
+                                {activity.description}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {new Date(transaction.created_at).toLocaleDateString()}
+                                {new Date(activity.created_at).toLocaleDateString()} • 
+                                <span className={`ml-1 ${
+                                  activity.type === 'transaction' 
+                                    ? activity.status === 'completed' ? 'text-success' : 'text-accent'
+                                    : activity.rewarded ? 'text-success' : 'text-muted-foreground'
+                                }`}>
+                                  {activity.type === 'transaction' ? activity.status : (activity.rewarded ? 'rewarded' : 'no reward')}
+                                </span>
                               </p>
                             </div>
-                            <div className={`text-sm font-bold ${
-                              transaction.amount > 0 ? "text-success" : "text-destructive"
-                            }`}>
-                              {transaction.amount > 0 ? "+" : ""}{transaction.amount}
-                            </div>
+                            {activity.type === 'transaction' && activity.amount && (
+                              <div className={`text-sm font-bold ${
+                                activity.amount > 0 ? "text-success" : "text-destructive"
+                              }`}>
+                                {activity.amount > 0 ? "+" : ""}{activity.amount}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <p className="text-muted-foreground">No transactions yet</p>
+                        <p className="text-muted-foreground">No recent activity</p>
                       </div>
                     )}
                   </Card>
@@ -266,21 +323,13 @@ const Dashboard = () => {
               <Portfolio />
             </TabsContent>
 
-            <TabsContent value="calendar">
-              <DashboardCalendar />
-            </TabsContent>
 
             <TabsContent value="settings">
               <AccountSettings />
             </TabsContent>
 
             <TabsContent value="analytics">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Analytics</h3>
-                <p className="text-muted-foreground">
-                  Detailed analytics and insights coming soon...
-                </p>
-              </Card>
+              <Analytics />
             </TabsContent>
           </Tabs>
         </main>

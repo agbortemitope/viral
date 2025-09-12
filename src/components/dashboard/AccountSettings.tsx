@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,23 +10,23 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
+import { useNotificationSettings } from "@/hooks/useNotificationSettings";
+import { useAvatarUpload } from "@/hooks/useAvatarUpload";
 import { Loader2, Upload, User, Mail, Bell, Shield, Trash2 } from "lucide-react";
 
 const AccountSettings = () => {
   const { user, signOut } = useAuth();
-  const { profile, updateProfile, loading } = useProfile();
+  const { profile, updateProfile, loading, refetch: refetchProfile } = useProfile();
   const { toast } = useToast();
+  const { settings: notifications, updateSettings: updateNotifications } = useNotificationSettings();
+  const { uploadAvatar, uploading } = useAvatarUpload();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     username: profile?.username || "",
     bio: profile?.bio || "",
     avatar_url: profile?.avatar_url || "",
-  });
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    marketing: false,
   });
 
   const handleSave = async () => {
@@ -50,6 +50,17 @@ const AccountSettings = () => {
     }
   };
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const avatarUrl = await uploadAvatar(file);
+      if (avatarUrl) {
+        setFormData(prev => ({ ...prev, avatar_url: avatarUrl }));
+        refetchProfile();
+      }
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
       // In a real app, you'd call an API to delete the account
@@ -58,6 +69,17 @@ const AccountSettings = () => {
         description: "Your account deletion request has been submitted.",
       });
     }
+  };
+
+  const handleNotificationChange = (key: keyof typeof notifications, value: boolean) => {
+    updateNotifications({ [key]: value });
+  };
+
+  const handlePasswordChange = () => {
+    toast({
+      title: "Password change requested",
+      description: "Check your email for password reset instructions.",
+    });
   };
 
   if (loading) {
@@ -90,8 +112,24 @@ const AccountSettings = () => {
               </AvatarFallback>
             </Avatar>
             <div>
-              <Button variant="outline" size="sm">
-                <Upload className="h-4 w-4 mr-2" />
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleAvatarUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
                 Upload Avatar
               </Button>
               <p className="text-sm text-muted-foreground mt-2">
@@ -185,9 +223,9 @@ const AccountSettings = () => {
               </p>
             </div>
             <Switch
-              checked={notifications.email}
+              checked={notifications.email_notifications}
               onCheckedChange={(checked) => 
-                setNotifications({ ...notifications, email: checked })
+                handleNotificationChange('email_notifications', checked)
               }
             />
           </div>
@@ -200,9 +238,9 @@ const AccountSettings = () => {
               </p>
             </div>
             <Switch
-              checked={notifications.push}
+              checked={notifications.push_notifications}
               onCheckedChange={(checked) => 
-                setNotifications({ ...notifications, push: checked })
+                handleNotificationChange('push_notifications', checked)
               }
             />
           </div>
@@ -215,9 +253,9 @@ const AccountSettings = () => {
               </p>
             </div>
             <Switch
-              checked={notifications.marketing}
+              checked={notifications.marketing_communications}
               onCheckedChange={(checked) => 
-                setNotifications({ ...notifications, marketing: checked })
+                handleNotificationChange('marketing_communications', checked)
               }
             />
           </div>
@@ -236,7 +274,7 @@ const AccountSettings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handlePasswordChange}>
             Change Password
           </Button>
           <Button variant="outline" onClick={signOut}>
