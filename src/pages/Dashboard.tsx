@@ -199,6 +199,28 @@ const Dashboard = () => {
                     </div>
                   </div>
 
+                  {/* Earnings Chart */}
+                  <Card className="p-6 bg-gradient-card border-border/50 mb-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-semibold text-foreground">
+                        Earnings Overview
+                      </h3>
+                      <Button variant="ghost" size="sm">
+                        <BarChart3 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Mock chart area */}
+                    <div className="h-64 bg-muted/20 rounded-lg flex items-center justify-center border border-border/30">
+                      <div className="text-center">
+                        <TrendingUp className="h-12 w-12 text-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">
+                          Interactive earnings chart will appear here
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
                   {/* Recent Activity */}
                   <Card className="p-6 bg-gradient-card border-border/50">
                     <div className="flex items-center justify-between mb-6">

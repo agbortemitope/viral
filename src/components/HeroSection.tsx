@@ -2,10 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Play, TrendingUp, Users, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-creators.jpg";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <section className="relative overflow-hidden">
@@ -53,7 +55,7 @@ const HeroSection = () => {
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8 py-6"
-                onClick={() => navigate('/feed')}
+                onClick={() => navigate(user ? '/feed' : '/signup')}
               >
                 View Opportunities
               </Button>
