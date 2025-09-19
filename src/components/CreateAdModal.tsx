@@ -40,10 +40,11 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     location: "",
     contact_info: "",
     image_url: "",
-    price: "", // product
-    event_date: "", // event
-    job_type: "", // job
-    property_type: "", // property
+    // New category-specific fields
+    price: "",
+    event_date: "",
+    job_type: "",
+    property_type: "",
   });
 
   const { user } = useAuth();
@@ -70,7 +71,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
       return;
     }
 
-    // category-specific validation
+    // Category-specific validation
     if (formData.content_type === "product" && !formData.price) {
       toast({
         title: "Missing price",
@@ -90,7 +91,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     if (formData.content_type === "job" && !formData.job_type) {
       toast({
         title: "Missing job type",
-        description: "Jobs must specify a job type.",
+        description: "Jobs must specify a type.",
         variant: "destructive",
       });
       return;
@@ -128,12 +129,24 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     setLoading(true);
 
     try {
+      // Insert ad with category-specific fields
       const { data: adData, error: adError } = await supabase
         .from("content")
         .insert({
-          ...formData,
+          title: formData.title,
+          description: formData.description,
+          content_type: formData.content_type,
           reward_coins: rewardCoins,
           budget,
+          target_audience: formData.target_audience || null,
+          location: formData.location || null,
+          contact_info: formData.contact_info || null,
+          image_url: formData.image_url || null,
+          price: formData.content_type === "product" ? formData.price : null,
+          event_date: formData.content_type === "event" ? formData.event_date : null,
+          job_type: formData.content_type === "job" ? formData.job_type : null,
+          property_type:
+            formData.content_type === "property" ? formData.property_type : null,
           user_id: user.id,
           status: "pending",
         })
@@ -142,6 +155,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
 
       if (adError) throw adError;
 
+      // Deduct coins
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ coins: profile.coins - budget })
@@ -149,11 +163,27 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
 
       if (updateError) throw updateError;
 
+      // Create transaction log
+      const description = (() => {
+        switch (formData.content_type) {
+          case "product":
+            return `Created Product: ${formData.title} ($${formData.price})`;
+          case "event":
+            return `Created Event: ${formData.title} on ${formData.event_date}`;
+          case "job":
+            return `Created Job: ${formData.title} (${formData.job_type})`;
+          case "property":
+            return `Created Property: ${formData.title} (${formData.property_type})`;
+          default:
+            return `Created Ad: ${formData.title}`;
+        }
+      })();
+
       await supabase.from("transactions").insert({
         user_id: user.id,
         transaction_type: "spend",
         amount: -budget,
-        description: `Created ${formData.content_type}: ${formData.title}`,
+        description,
         content_id: adData?.id,
       });
 
@@ -162,6 +192,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
         description: "Your ad is now pending approval.",
       });
 
+      // Reset form
       setFormData({
         title: "",
         description: "",
@@ -192,6 +223,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     }
   };
 
+  // New: render fields dynamically per category
   const renderCategoryFields = () => {
     switch (formData.content_type) {
       case "job":
@@ -205,6 +237,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
                 setFormData({ ...formData, job_type: e.target.value })
               }
               placeholder="e.g., Full-time, Part-time"
+              required
             />
           </div>
         );
@@ -219,6 +252,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
               onChange={(e) =>
                 setFormData({ ...formData, event_date: e.target.value })
               }
+              required
             />
           </div>
         );
@@ -233,6 +267,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
                 setFormData({ ...formData, property_type: e.target.value })
               }
               placeholder="e.g., Apartment, Office Space"
+              required
             />
           </div>
         );
@@ -249,6 +284,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
                 setFormData({ ...formData, price: e.target.value })
               }
               placeholder="Enter product price"
+              required
             />
           </div>
         );
@@ -322,7 +358,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
             />
           </div>
 
-          {/* Category-Specific Fields */}
+          {/* Dynamic fields */}
           {renderCategoryFields()}
 
           {/* Location & Contact */}
@@ -351,7 +387,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
             </div>
           </div>
 
-          {/* Image Input */}
+          {/* Image */}
           <div>
             <Label htmlFor="image_url">Image (Optional)</Label>
             <Input
