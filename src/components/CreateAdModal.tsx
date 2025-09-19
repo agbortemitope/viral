@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,29 +27,79 @@ interface CreateAdModalProps {
   onAdCreated?: () => void;
 }
 
+const CATEGORY_FIELDS: Record<string, { label: string; type: "text" | "textarea" | "number" | "url"; required?: boolean }[]> = {
+  job: [
+    { label: "Job Title", type: "text", required: true },
+    { label: "Job Description", type: "textarea", required: true },
+    { label: "Location", type: "text" },
+    { label: "Salary Range", type: "text" },
+    { label: "Contact Info", type: "text", required: true },
+  ],
+  event: [
+    { label: "Event Title", type: "text", required: true },
+    { label: "Event Description", type: "textarea", required: true },
+    { label: "Location", type: "text", required: true },
+    { label: "Date & Time", type: "text", required: true },
+    { label: "Contact Info", type: "text" },
+  ],
+  ad: [
+    { label: "Ad Title", type: "text", required: true },
+    { label: "Ad Description", type: "textarea", required: true },
+    { label: "Target Audience", type: "text" },
+    { label: "Contact Info", type: "text" },
+    { label: "Image URL", type: "url" },
+  ],
+  property: [
+    { label: "Property Title", type: "text", required: true },
+    { label: "Property Description", type: "textarea", required: true },
+    { label: "Location", type: "text", required: true },
+    { label: "Price", type: "number", required: true },
+    { label: "Contact Info", type: "text" },
+    { label: "Image URL", type: "url" },
+  ],
+  product: [
+    { label: "Product Name", type: "text", required: true },
+    { label: "Description", type: "textarea", required: true },
+    { label: "Price", type: "number", required: true },
+    { label: "Stock Quantity", type: "number", required: true },
+    { label: "Image URL", type: "url" },
+  ],
+};
+
 const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    content_type: "",
-    reward_coins: "",
-    budget: "",
-    target_audience: "",
-    location: "",
-    contact_info: "",
-    image_url: "",
-    // New category-specific fields
-    price: "",
-    event_date: "",
-    job_type: "",
-    property_type: "",
-  });
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [contentType, setContentType] = useState("");
 
   const { user } = useAuth();
   const { profile, refetch: refetchProfile } = useProfile();
   const { toast } = useToast();
+
+  // Listen for updates to ads (e.g. approval/rejection)
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("content-updates")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "content", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const updatedAd = payload.new as any;
+          toast({
+            title: "Ad Update",
+            description: `Your ad "${updatedAd.title}" is now ${updatedAd.status}.`,
+          });
+          onAdCreated?.();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, onAdCreated, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,51 +112,17 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
       return;
     }
 
-    if (!formData.content_type) {
+    if (!contentType) {
       toast({
         title: "Missing category",
-        description: "Please select a category.",
+        description: "Please select a category for your ad.",
         variant: "destructive",
       });
       return;
     }
 
-    // Category-specific validation
-    if (formData.content_type === "product" && !formData.price) {
-      toast({
-        title: "Missing price",
-        description: "Products must include a price.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (formData.content_type === "event" && !formData.event_date) {
-      toast({
-        title: "Missing date",
-        description: "Events must include a date.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (formData.content_type === "job" && !formData.job_type) {
-      toast({
-        title: "Missing job type",
-        description: "Jobs must specify a type.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (formData.content_type === "property" && !formData.property_type) {
-      toast({
-        title: "Missing property type",
-        description: "Properties must specify a type.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const budget = parseInt(formData.budget, 10);
-    const rewardCoins = parseInt(formData.reward_coins, 10) || 0;
+    const budget = parseInt(formData.budget || "0", 10);
+    const rewardCoins = parseInt(formData.reward_coins || "0", 10);
 
     if (isNaN(budget) || budget < 1) {
       toast({
@@ -129,24 +145,18 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     setLoading(true);
 
     try {
-      // Insert ad with category-specific fields
       const { data: adData, error: adError } = await supabase
         .from("content")
         .insert({
-          title: formData.title,
-          description: formData.description,
-          content_type: formData.content_type,
+          title: formData.title || "",
+          description: formData.description || "",
+          content_type: contentType,
           reward_coins: rewardCoins,
           budget,
-          target_audience: formData.target_audience || null,
-          location: formData.location || null,
-          contact_info: formData.contact_info || null,
+          target_audience: formData.target_audience || "",
+          location: formData.location || "",
+          contact_info: formData.contact_info || "",
           image_url: formData.image_url || null,
-          price: formData.content_type === "product" ? formData.price : null,
-          event_date: formData.content_type === "event" ? formData.event_date : null,
-          job_type: formData.content_type === "job" ? formData.job_type : null,
-          property_type:
-            formData.content_type === "property" ? formData.property_type : null,
           user_id: user.id,
           status: "pending",
         })
@@ -155,7 +165,6 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
 
       if (adError) throw adError;
 
-      // Deduct coins
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ coins: profile.coins - budget })
@@ -163,27 +172,11 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
 
       if (updateError) throw updateError;
 
-      // Create transaction log
-      const description = (() => {
-        switch (formData.content_type) {
-          case "product":
-            return `Created Product: ${formData.title} ($${formData.price})`;
-          case "event":
-            return `Created Event: ${formData.title} on ${formData.event_date}`;
-          case "job":
-            return `Created Job: ${formData.title} (${formData.job_type})`;
-          case "property":
-            return `Created Property: ${formData.title} (${formData.property_type})`;
-          default:
-            return `Created Ad: ${formData.title}`;
-        }
-      })();
-
       await supabase.from("transactions").insert({
         user_id: user.id,
         transaction_type: "spend",
         amount: -budget,
-        description,
+        description: `Created ${contentType}: ${formData.title}`,
         content_id: adData?.id,
       });
 
@@ -192,22 +185,8 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
         description: "Your ad is now pending approval.",
       });
 
-      // Reset form
-      setFormData({
-        title: "",
-        description: "",
-        content_type: "",
-        reward_coins: "",
-        budget: "",
-        target_audience: "",
-        location: "",
-        contact_info: "",
-        image_url: "",
-        price: "",
-        event_date: "",
-        job_type: "",
-        property_type: "",
-      });
+      setFormData({});
+      setContentType("");
       setOpen(false);
 
       refetchProfile();
@@ -223,75 +202,7 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
     }
   };
 
-  // New: render fields dynamically per category
-  const renderCategoryFields = () => {
-    switch (formData.content_type) {
-      case "job":
-        return (
-          <div>
-            <Label htmlFor="job_type">Job Type *</Label>
-            <Input
-              id="job_type"
-              value={formData.job_type}
-              onChange={(e) =>
-                setFormData({ ...formData, job_type: e.target.value })
-              }
-              placeholder="e.g., Full-time, Part-time"
-              required
-            />
-          </div>
-        );
-      case "event":
-        return (
-          <div>
-            <Label htmlFor="event_date">Event Date *</Label>
-            <Input
-              id="event_date"
-              type="date"
-              value={formData.event_date}
-              onChange={(e) =>
-                setFormData({ ...formData, event_date: e.target.value })
-              }
-              required
-            />
-          </div>
-        );
-      case "property":
-        return (
-          <div>
-            <Label htmlFor="property_type">Property Type *</Label>
-            <Input
-              id="property_type"
-              value={formData.property_type}
-              onChange={(e) =>
-                setFormData({ ...formData, property_type: e.target.value })
-              }
-              placeholder="e.g., Apartment, Office Space"
-              required
-            />
-          </div>
-        );
-      case "product":
-        return (
-          <div>
-            <Label htmlFor="price">Price *</Label>
-            <Input
-              id="price"
-              type="number"
-              min="0"
-              value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
-              placeholder="Enter product price"
-              required
-            />
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  const categoryFields = CATEGORY_FIELDS[contentType] || [];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -307,111 +218,61 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Title & Category */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                placeholder="Enter ad title"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="content_type">Category *</Label>
-              <Select
-                value={formData.content_type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, content_type: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="job">Job</SelectItem>
-                  <SelectItem value="event">Event</SelectItem>
-                  <SelectItem value="ad">Advertisement</SelectItem>
-                  <SelectItem value="property">Property</SelectItem>
-                  <SelectItem value="product">Product</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Description */}
+          {/* Category Selector */}
           <div>
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Describe your ad in detail..."
-              className="min-h-[100px]"
-              required
-            />
+            <Label htmlFor="content_type">Category *</Label>
+            <Select
+              value={contentType}
+              onValueChange={(value) => {
+                setContentType(value);
+                setFormData({});
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="job">Job Listing</SelectItem>
+                <SelectItem value="event">Event</SelectItem>
+                <SelectItem value="ad">Advertisement</SelectItem>
+                <SelectItem value="property">Property Listing</SelectItem>
+                <SelectItem value="product">Product</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Dynamic fields */}
-          {renderCategoryFields()}
-
-          {/* Location & Contact */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
-                }
-                placeholder="City, State or Address"
-              />
-            </div>
-            <div>
-              <Label htmlFor="contact_info">Contact Info</Label>
-              <Input
-                id="contact_info"
-                value={formData.contact_info}
-                onChange={(e) =>
-                  setFormData({ ...formData, contact_info: e.target.value })
-                }
-                placeholder="Email or Phone"
-              />
-            </div>
-          </div>
-
-          {/* Image */}
-          <div>
-            <Label htmlFor="image_url">Image (Optional)</Label>
-            <Input
-              id="image_url"
-              value={formData.image_url}
-              onChange={(e) =>
-                setFormData({ ...formData, image_url: e.target.value })
-              }
-              placeholder="https://example.com/image.jpg"
-              type="url"
-            />
-            {formData.image_url && (
-              <div className="mt-2">
-                <img
-                  src={formData.image_url}
-                  alt="Preview"
-                  className="w-full h-32 object-cover rounded-md border"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
+          {/* Dynamic Fields */}
+          {categoryFields.map((field) => (
+            <div key={field.label}>
+              <Label>{field.label}{field.required ? " *" : ""}</Label>
+              {field.type === "textarea" ? (
+                <Textarea
+                  value={formData[field.label.toLowerCase().replace(/\s+/g, "_")] || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      [field.label.toLowerCase().replace(/\s+/g, "_")]: e.target.value,
+                    })
+                  }
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                  required={field.required}
                 />
-              </div>
-            )}
-          </div>
+              ) : (
+                <Input
+                  type={field.type}
+                  value={formData[field.label.toLowerCase().replace(/\s+/g, "_")] || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      [field.label.toLowerCase().replace(/\s+/g, "_")]: e.target.value,
+                    })
+                  }
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                  required={field.required}
+                />
+              )}
+            </div>
+          ))}
 
           {/* Reward & Budget */}
           <div className="grid grid-cols-2 gap-4">
@@ -421,10 +282,8 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
                 id="reward_coins"
                 type="number"
                 min="0"
-                value={formData.reward_coins}
-                onChange={(e) =>
-                  setFormData({ ...formData, reward_coins: e.target.value })
-                }
+                value={formData.reward_coins || ""}
+                onChange={(e) => setFormData({ ...formData, reward_coins: e.target.value })}
                 placeholder="10"
               />
             </div>
@@ -434,10 +293,8 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
                 id="budget"
                 type="number"
                 min="1"
-                value={formData.budget}
-                onChange={(e) =>
-                  setFormData({ ...formData, budget: e.target.value })
-                }
+                value={formData.budget || ""}
+                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                 placeholder="100"
                 required
               />
@@ -447,19 +304,6 @@ const CreateAdModal = ({ onAdCreated }: CreateAdModalProps) => {
                 </p>
               )}
             </div>
-          </div>
-
-          {/* Target Audience */}
-          <div>
-            <Label htmlFor="target_audience">Target Audience</Label>
-            <Input
-              id="target_audience"
-              value={formData.target_audience}
-              onChange={(e) =>
-                setFormData({ ...formData, target_audience: e.target.value })
-              }
-              placeholder="e.g., Students, Professionals, Remote Workers"
-            />
           </div>
 
           {/* Actions */}
