@@ -175,8 +175,13 @@ export type Database = {
           amount: number
           content_id: string | null
           created_at: string
+          currency: string | null
           description: string
+          exchange_rate: string | null
+          fiat_amount: number | null
           id: string
+          payment_method: string | null
+          payment_reference: string | null
           status: string
           transaction_type: string
           user_id: string
@@ -185,8 +190,13 @@ export type Database = {
           amount: number
           content_id?: string | null
           created_at?: string
+          currency?: string | null
           description: string
+          exchange_rate?: string | null
+          fiat_amount?: number | null
           id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
           status?: string
           transaction_type: string
           user_id: string
@@ -195,8 +205,13 @@ export type Database = {
           amount?: number
           content_id?: string | null
           created_at?: string
+          currency?: string | null
           description?: string
+          exchange_rate?: string | null
+          fiat_amount?: number | null
           id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
           status?: string
           transaction_type?: string
           user_id?: string
@@ -251,7 +266,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_and_distribute_rewards: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

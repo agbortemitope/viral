@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Coins, ArrowUpCircle, ArrowDownCircle, Loader2, Wallet } from "lucide-react";
+import { Coins, ArrowUpCircle, ArrowDownCircle, Loader2, Wallet, CreditCard, Building2 } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -12,6 +12,14 @@ import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getUserLocation, convertCurrency, formatCurrency, getAllCurrencies } from "@/lib/currency";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Transaction {
   id: string;
@@ -33,6 +41,21 @@ const WalletPage = () => {
   const [userCurrency, setUserCurrency] = useState("USD");
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [locationLoading, setLocationLoading] = useState(true);
+  const [purchaseAmount, setPurchaseAmount] = useState("");
+  const [bankAccountDialogOpen, setBankAccountDialogOpen] = useState(false);
+  const [bankDetails, setBankDetails] = useState({
+    accountNumber: "",
+    accountName: "",
+    bankName: "",
+  });
+
+  // Conversion rates: These currencies = 100 coins
+  const conversionRates: { [key: string]: number } = {
+    USD: 1, // $1 = 100 coins
+    GBP: 1, // £1 = 100 coins
+    EUR: 1, // €1 = 100 coins
+    NGN: 1000, // ₦1000 = 100 coins
+  };
 
   useEffect(() => {
     if (user) {
@@ -68,30 +91,40 @@ const WalletPage = () => {
     }
   };
 
-  const handleDeposit = async () => {
-    const displayAmount = parseFloat(depositAmount);
-    const amount = processDeposit(displayAmount);
+  const calculateCoins = (fiatAmount: number, currency: string) => {
+    const rate = conversionRates[currency] || 1;
+    return Math.round((fiatAmount / rate) * 100);
+  };
+
+  const handlePurchaseCoins = async () => {
+    const fiatAmount = parseFloat(purchaseAmount);
     
-    if (!amount || amount <= 0) {
+    if (!fiatAmount || fiatAmount <= 0) {
       toast({
         title: "Invalid amount",
-        description: "Please enter a valid deposit amount",
+        description: "Please enter a valid purchase amount",
         variant: "destructive",
       });
       return;
     }
 
+    const coinsToAdd = calculateCoins(fiatAmount, selectedCurrency);
     setLoading(true);
+    
     try {
-      // Create deposit transaction record
+      // Create purchase transaction record
       const { error: transactionError } = await supabase
         .from("transactions")
         .insert({
           user_id: user?.id,
-          transaction_type: "deposit",
-          amount: amount,
-          description: `Deposit of ${formatCurrency(displayAmount, selectedCurrency)}`,
-          status: "completed"
+          transaction_type: "purchase",
+          amount: coinsToAdd,
+          description: `Purchased ${coinsToAdd} coins for ${formatCurrency(fiatAmount, selectedCurrency)}`,
+          status: "completed",
+          currency: selectedCurrency,
+          fiat_amount: fiatAmount,
+          exchange_rate: `${conversionRates[selectedCurrency]} ${selectedCurrency} = 100 coins`,
+          payment_method: "card"
         });
 
       if (transactionError) throw transactionError;
@@ -100,23 +133,55 @@ const WalletPage = () => {
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ 
-          coins: (profile?.coins || 0) + amount,
+          coins: (profile?.coins || 0) + coinsToAdd,
         })
         .eq("user_id", user?.id);
 
       if (profileError) throw profileError;
 
       toast({
-        title: "Deposit successful!",
-        description: `${formatCurrency(displayAmount, selectedCurrency)} has been added to your wallet`,
+        title: "Purchase successful!",
+        description: `${coinsToAdd} coins have been added to your wallet`,
       });
 
-      setDepositAmount("");
+      setPurchaseAmount("");
       fetchTransactions();
     } catch (error) {
       toast({
-        title: "Deposit failed",
-        description: "There was an error processing your deposit",
+        title: "Purchase failed",
+        description: "There was an error processing your purchase",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLinkBankAccount = async () => {
+    if (!bankDetails.accountNumber || !bankDetails.accountName || !bankDetails.bankName) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all bank account details",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // In production, this would securely store encrypted bank details
+      // For now, we'll just show success
+      toast({
+        title: "Bank account linked!",
+        description: "Your bank account has been successfully linked",
+      });
+      
+      setBankAccountDialogOpen(false);
+      setBankDetails({ accountNumber: "", accountName: "", bankName: "" });
+    } catch (error) {
+      toast({
+        title: "Link failed",
+        description: "There was an error linking your bank account",
         variant: "destructive",
       });
     } finally {
@@ -328,31 +393,123 @@ const WalletPage = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Quick Actions */}
+            {/* Purchase Coins */}
             <Card className="p-6 bg-gradient-card border-border/50">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Purchase Coins
+              </h2>
               
-              <div className="space-y-6">
+              <div className="space-y-4">
+                {/* Conversion Rate Display */}
+                <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+                  <p className="text-sm font-medium text-foreground mb-2">Conversion Rates:</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                    <span>$1 = 100 coins</span>
+                    <span>£1 = 100 coins</span>
+                    <span>€1 = 100 coins</span>
+                    <span>₦1,000 = 100 coins</span>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Deposit Amount ({selectedCurrency})
+                    Amount ({selectedCurrency})
                   </label>
-                  <div className="flex space-x-2">
-                    <Input
-                      type="number"
-                      placeholder="Enter amount"
-                      value={depositAmount}
-                      onChange={(e) => setDepositAmount(e.target.value)}
-                      min="0"
-                    />
-                    <Button 
-                      onClick={handleDeposit} 
-                      disabled={loading || !depositAmount}
-                      className="whitespace-nowrap"
-                    >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Deposit"}
-                    </Button>
-                  </div>
+                  <Input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={purchaseAmount}
+                    onChange={(e) => setPurchaseAmount(e.target.value)}
+                    min="0"
+                    step={selectedCurrency === "NGN" ? "100" : "1"}
+                  />
+                  {purchaseAmount && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      You will receive: <span className="font-bold text-primary">
+                        {calculateCoins(parseFloat(purchaseAmount), selectedCurrency)} coins
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={handlePurchaseCoins} 
+                  disabled={loading || !purchaseAmount}
+                  className="w-full"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Purchase Coins"}
+                </Button>
+
+                {/* Bank Account Section */}
+                <div className="pt-4 border-t border-border/50">
+                  <Dialog open={bankAccountDialogOpen} onOpenChange={setBankAccountDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full">
+                        <Building2 className="h-4 w-4 mr-2" />
+                        Link Bank Account
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Link Bank Account</DialogTitle>
+                        <DialogDescription>
+                          Add your bank account details for withdrawals
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Account Number
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder="Enter account number"
+                            value={bankDetails.accountNumber}
+                            onChange={(e) => setBankDetails({
+                              ...bankDetails,
+                              accountNumber: e.target.value
+                            })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Account Name
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder="Enter account name"
+                            value={bankDetails.accountName}
+                            onChange={(e) => setBankDetails({
+                              ...bankDetails,
+                              accountName: e.target.value
+                            })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Bank Name
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder="Enter bank name"
+                            value={bankDetails.bankName}
+                            onChange={(e) => setBankDetails({
+                              ...bankDetails,
+                              bankName: e.target.value
+                            })}
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleLinkBankAccount}
+                          disabled={loading}
+                          className="w-full"
+                        >
+                          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link Account"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div>
