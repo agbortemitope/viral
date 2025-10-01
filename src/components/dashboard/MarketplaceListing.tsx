@@ -8,18 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useMarketplace } from "@/hooks/useMarketplace";
-import { 
-  Store, 
-  Edit, 
-  Eye, 
-  MessageCircle, 
-  Star,
-  MapPin,
-  Clock,
-  DollarSign,
-  Loader2,
-  Plus
-} from "lucide-react";
+import { Store, CreditCard as Edit, Eye, MessageCircle, Star, MapPin, Clock, DollarSign, Loader as Loader2, Plus } from "lucide-react";
 
 const categories = [
   "Design & Creative",

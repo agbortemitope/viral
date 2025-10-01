@@ -20,22 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  User, 
-  BarChart3, 
-  Briefcase, 
-  Coins, 
-  Eye, 
-  MousePointer, 
-  TrendingUp,
-  Calendar,
-  Settings,
-  Edit3,
-  Star,
-  Award,
-  Plus,
-  Briefcase as PortfolioIcon
-} from "lucide-react";
+import { User, ChartBar as BarChart3, Briefcase, Coins, Eye, MousePointer, TrendingUp, Calendar, Settings, CreditCard as Edit3, Star, Award, Plus, Briefcase as PortfolioIcon } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();

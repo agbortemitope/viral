@@ -17,17 +17,7 @@ import {
   LineChart,
   Line
 } from 'recharts';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  Eye, 
-  MousePointer, 
-  Target,
-  Globe,
-  Users,
-  Smartphone,
-  Loader2
-} from "lucide-react";
+import { TrendingUp, DollarSign, Eye, MousePointer, Target, Globe, Users, Smartphone, Loader as Loader2 } from "lucide-react";
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1', '#d084d0'];
 

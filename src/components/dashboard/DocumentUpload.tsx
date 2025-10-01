@@ -3,17 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDocuments } from "@/hooks/useDocuments";
-import { 
-  Upload, 
-  FileText, 
-  Download, 
-  Trash2, 
-  Star, 
-  StarOff,
-  Loader2,
-  File,
-  Image as ImageIcon
-} from "lucide-react";
+import { Upload, FileText, Download, Trash2, Star, StarOff, Loader as Loader2, File, Image as ImageIcon } from "lucide-react";
 
 const DocumentUpload = () => {
   const { documents, loading, uploading, uploadDocument, deleteDocument, setPrimaryDocument } = useDocuments();

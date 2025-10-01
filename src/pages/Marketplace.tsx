@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Coins, MapPin, Calendar, Search, Building, Loader2 } from "lucide-react";
+import { Coins, MapPin, Calendar, Search, Building, Loader as Loader2 } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
