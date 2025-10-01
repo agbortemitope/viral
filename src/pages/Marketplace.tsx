@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useMarketplace } from "@/hooks/useMarketplace";
 
 interface MarketplaceItem {
   id: string;
@@ -24,48 +25,23 @@ interface MarketplaceItem {
 const Marketplace = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
-  const [items, setItems] = useState<MarketplaceItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { listings, loading, incrementViews, incrementContacts } = useMarketplace();
 
-  useEffect(() => {
-    if (user) {
-      fetchItems();
-    }
-  }, [user]);
-
-  const fetchItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("content")
-        .select("*")
-        .in("status", ["approved", "active"])
-        .in("content_type", ["design", "video_editing", "content_creation", "web_development", "marketing"])
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setItems(data || []);
-    } catch (error) {
-      console.error("Error fetching creative opportunities:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredItems = items.filter(item => {
+  const filteredItems = listings.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === "all" || item.content_type === selectedType;
+    const matchesType = selectedType === "all" || item.category === selectedType;
     return matchesSearch && matchesType;
   });
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "design": return "bg-primary/20 text-primary border-primary/30";
-      case "video_editing": return "bg-accent/20 text-accent border-accent/30"; 
-      case "content_creation": return "bg-success/20 text-success border-success/30";
-      case "web_development": return "bg-secondary/20 text-secondary border-secondary/30";
-      case "marketing": return "bg-warning/20 text-warning border-warning/30";
+  const getTypeColor = (category: string) => {
+    switch (category) {
+      case "Design & Creative": return "bg-primary/20 text-primary border-primary/30";
+      case "Web Development": return "bg-secondary/20 text-secondary border-secondary/30";
+      case "Video & Animation": return "bg-accent/20 text-accent border-accent/30"; 
+      case "Writing & Content": return "bg-success/20 text-success border-success/30";
+      case "Marketing & SEO": return "bg-warning/20 text-warning border-warning/30";
       default: return "bg-muted/20 text-muted-foreground border-muted/30";
     }
   };
@@ -114,42 +90,42 @@ const Marketplace = () => {
                 onClick={() => setSelectedType("all")}
                 size="sm"
               >
-                All Opportunities
+                All Services
               </Button>
               <Button
-                variant={selectedType === "design" ? "default" : "outline"}
-                onClick={() => setSelectedType("design")}
+                variant={selectedType === "Design & Creative" ? "default" : "outline"}
+                onClick={() => setSelectedType("Design & Creative")}
                 size="sm"
               >
-                Design
+                Design & Creative
               </Button>
               <Button
-                variant={selectedType === "video_editing" ? "default" : "outline"}
-                onClick={() => setSelectedType("video_editing")}
-                size="sm"
-              >
-                Video Editing
-              </Button>
-              <Button
-                variant={selectedType === "content_creation" ? "default" : "outline"}
-                onClick={() => setSelectedType("content_creation")}
-                size="sm"
-              >
-                Content Creation
-              </Button>
-              <Button
-                variant={selectedType === "web_development" ? "default" : "outline"}
-                onClick={() => setSelectedType("web_development")}
+                variant={selectedType === "Web Development" ? "default" : "outline"}
+                onClick={() => setSelectedType("Web Development")}
                 size="sm"
               >
                 Web Development
               </Button>
               <Button
-                variant={selectedType === "marketing" ? "default" : "outline"}
-                onClick={() => setSelectedType("marketing")}
+                variant={selectedType === "Video & Animation" ? "default" : "outline"}
+                onClick={() => setSelectedType("Video & Animation")}
                 size="sm"
               >
-                Marketing
+                Video & Animation
+              </Button>
+              <Button
+                variant={selectedType === "Writing & Content" ? "default" : "outline"}
+                onClick={() => setSelectedType("Writing & Content")}
+                size="sm"
+              >
+                Writing & Content
+              </Button>
+              <Button
+                variant={selectedType === "Marketing & SEO" ? "default" : "outline"}
+                onClick={() => setSelectedType("Marketing & SEO")}
+                size="sm"
+              >
+                Marketing & SEO
               </Button>
             </div>
           </div>
@@ -160,33 +136,24 @@ const Marketplace = () => {
               <div className="col-span-full">
                 <Card className="p-8 text-center bg-gradient-card border-border/50">
                   <p className="text-muted-foreground mb-2">
-                    No creative opportunities found matching your criteria.
+                    No services found matching your criteria.
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Check back soon for new projects from brands looking for talented creators!
+                    Check back soon for new service providers!
                   </p>
                 </Card>
               </div>
             ) : (
               filteredItems.map((item) => (
                 <Card key={item.id} className="bg-gradient-card border-border/50 hover:shadow-card transition-all">
-                  {item.image_url && (
-                    <div className="h-48 bg-muted rounded-t-lg overflow-hidden">
-                      <img 
-                        src={item.image_url} 
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <Badge className={getTypeColor(item.content_type)}>
-                        {item.content_type.replace('_', ' ')}
+                      <Badge className={getTypeColor(item.category)}>
+                        {item.category}
                       </Badge>
-                      <div className="flex items-center space-x-1 bg-gradient-earnings px-2 py-1 rounded-full">
-                        <Coins className="h-3 w-3" />
-                        <span className="text-xs font-bold">{item.reward_coins}</span>
+                      <div className="flex items-center space-x-1 bg-success/20 px-2 py-1 rounded-full">
+                        <Star className="h-3 w-3 text-success" />
+                        <span className="text-xs font-bold">{item.rating.toFixed(1)}</span>
                       </div>
                     </div>
                     <CardTitle className="text-lg">{item.title}</CardTitle>
@@ -195,16 +162,27 @@ const Marketplace = () => {
                   <CardContent>
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-muted-foreground">
-                        <Building className="h-4 w-4 mr-2" />
-                        Project Budget: ₦{item.budget.toLocaleString()}
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        ₦{item.price_min.toLocaleString()} - ₦{item.price_max.toLocaleString()} / {item.pricing_type}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Posted: {new Date(item.created_at).toLocaleDateString()}
+                        <MapPin className="h-4 w-4 mr-2" />
+                        {item.location || 'Remote'} {item.remote_work && '• Remote Available'}
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Eye className="h-4 w-4 mr-2" />
+                        {item.views_count} views • {item.contact_count} contacts
                       </div>
                     </div>
-                    <Button className="w-full" variant="outline">
-                      Submit Proposal
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => {
+                        incrementViews(item.id);
+                        incrementContacts(item.id);
+                      }}
+                    >
+                      Contact Provider
                     </Button>
                   </CardContent>
                 </Card>

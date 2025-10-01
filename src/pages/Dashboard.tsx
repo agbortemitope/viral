@@ -6,6 +6,10 @@ import CreateAdModal from "@/components/CreateAdModal";
 import AccountSettings from "@/components/dashboard/AccountSettings";
 import Portfolio from "@/components/dashboard/Portfolio";
 import Analytics from "@/components/dashboard/Analytics";
+import DocumentUpload from "@/components/dashboard/DocumentUpload";
+import MarketplaceListing from "@/components/dashboard/MarketplaceListing";
+import AdvertiserAnalytics from "@/components/dashboard/AdvertiserAnalytics";
+import DashboardCalendar from "@/components/dashboard/Calendar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -164,11 +168,14 @@ const Dashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+              <TabsTrigger value="documents">Documents</TabsTrigger>
+              <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="analytics">Ad Analytics</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -324,17 +331,28 @@ const Dashboard = () => {
               </div>
             </TabsContent>
 
+            <TabsContent value="calendar">
+              <DashboardCalendar />
+            </TabsContent>
+
             <TabsContent value="portfolio">
               <Portfolio />
             </TabsContent>
 
+            <TabsContent value="documents">
+              <DocumentUpload />
+            </TabsContent>
+
+            <TabsContent value="marketplace">
+              <MarketplaceListing />
+            </TabsContent>
 
             <TabsContent value="settings">
               <AccountSettings />
             </TabsContent>
 
             <TabsContent value="analytics">
-              <Analytics />
+              <AdvertiserAnalytics />
             </TabsContent>
           </Tabs>
         </main>
