@@ -41,6 +41,7 @@ const Dashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState("30");
+  const [createAdOpen, setCreateAdOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -154,7 +155,11 @@ const Dashboard = () => {
               <p className="text-muted-foreground">Manage your account and track your activity</p>
             </div>
             <div className="flex items-center gap-4">
-              <CreateAdModal onAdCreated={fetchUserData} />
+              <CreateAdModal open={createAdOpen} onOpenChange={setCreateAdOpen} onSuccess={fetchUserData} />
+              <Button onClick={() => setCreateAdOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Ad
+              </Button>
             </div>
           </div>
 

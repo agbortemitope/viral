@@ -3,13 +3,16 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ContentCard from "@/components/ContentCard";
+import CreateAdModal from "@/components/CreateAdModal";
 import { useAuth } from "@/hooks/useAuth";
+import { useInteractions } from "@/hooks/useInteractions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
+import { Plus } from "lucide-react";
 
 interface ContentItem {
   id: string;
@@ -29,8 +32,10 @@ const Feed = () => {
   const [skeletonCount, setSkeletonCount] = useState(3);
   const [activeFilter, setActiveFilter] = useState("all");
   const [interactedItems, setInteractedItems] = useState<Set<string>>(new Set());
+  const [createAdOpen, setCreateAdOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { profile, refetch: refetchProfile } = useProfile();
+  const { trackInteraction } = useInteractions();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -177,14 +182,22 @@ const Feed = () => {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-4 text-foreground">
-              Discover Opportunities
-            </h1>
-            <p className="text-muted-foreground">
-              Explore jobs, events, ads, and more. Earn coins for every interaction!
-            </p>
+          <div className="flex items-center justify-between mb-8">
+            <div className="text-center flex-1">
+              <h1 className="text-3xl font-bold mb-2 text-foreground">
+                Discover Opportunities
+              </h1>
+              <p className="text-muted-foreground">
+                Explore jobs, events, ads, and more. Earn coins for every interaction!
+              </p>
+            </div>
+            <Button onClick={() => setCreateAdOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Ad
+            </Button>
           </div>
+          
+          <CreateAdModal open={createAdOpen} onOpenChange={setCreateAdOpen} onSuccess={fetchContent} />
 
           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="mb-8">
             <TabsList className="grid w-full grid-cols-5">

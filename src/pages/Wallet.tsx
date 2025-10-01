@@ -278,18 +278,25 @@ const WalletPage = () => {
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
+      case 'reward':
+        return <Coins className="h-5 w-5 text-primary" />;
+      case 'purchase':
+        return <ArrowUpCircle className="h-5 w-5 text-success" />;
       case 'earning':
       case 'deposit':
-        return <ArrowUpCircle className="h-4 w-4 text-success" />;
+        return <ArrowUpCircle className="h-5 w-5 text-success" />;
       case 'withdrawal':
-        return <ArrowDownCircle className="h-4 w-4 text-destructive" />;
+        return <ArrowDownCircle className="h-5 w-5 text-destructive" />;
+      case 'spend':
+        return <ArrowDownCircle className="h-5 w-5 text-accent" />;
       default:
-        return <Coins className="h-4 w-4 text-primary" />;
+        return <Coins className="h-5 w-5 text-primary" />;
     }
   };
 
   const getAmountColor = (type: string, amount: number) => {
-    if (type === 'withdrawal' || amount < 0) return 'text-destructive';
+    if (type === 'withdrawal' || type === 'spend' || amount < 0) return 'text-destructive';
+    if (type === 'reward') return 'text-primary';
     return 'text-success';
   };
 
