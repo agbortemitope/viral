@@ -112,11 +112,14 @@ export type Database = {
           categories: string[] | null
           coins: number
           created_at: string
+          email_notifications: boolean | null
           full_name: string | null
           hourly_rate: number | null
           id: string
+          marketing_communications: boolean | null
           portfolio_description: string | null
           portfolio_title: string | null
+          push_notifications: boolean | null
           skills: string[] | null
           total_earnings: number
           updated_at: string
@@ -130,11 +133,14 @@ export type Database = {
           categories?: string[] | null
           coins?: number
           created_at?: string
+          email_notifications?: boolean | null
           full_name?: string | null
           hourly_rate?: number | null
           id?: string
+          marketing_communications?: boolean | null
           portfolio_description?: string | null
           portfolio_title?: string | null
+          push_notifications?: boolean | null
           skills?: string[] | null
           total_earnings?: number
           updated_at?: string
@@ -148,11 +154,14 @@ export type Database = {
           categories?: string[] | null
           coins?: number
           created_at?: string
+          email_notifications?: boolean | null
           full_name?: string | null
           hourly_rate?: number | null
           id?: string
+          marketing_communications?: boolean | null
           portfolio_description?: string | null
           portfolio_title?: string | null
+          push_notifications?: boolean | null
           skills?: string[] | null
           total_earnings?: number
           updated_at?: string
