@@ -70,6 +70,7 @@ const Portfolio = () => {
     categories: string[];
     hourly_rate: number;
     available: boolean;
+    marketplace_enabled: boolean;
   }>({
     portfolio_title: profile?.portfolio_title || "",
     portfolio_description: profile?.portfolio_description || "",
@@ -77,6 +78,7 @@ const Portfolio = () => {
     categories: profile?.categories || [],
     hourly_rate: profile?.hourly_rate || 0,
     available: profile?.available ?? true,
+    marketplace_enabled: (profile as any)?.marketplace_enabled ?? false,
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -99,9 +101,10 @@ const Portfolio = () => {
         categories: profile.categories || [],
         hourly_rate: profile.hourly_rate || 0,
         available: profile.available || true,
+        marketplace_enabled: (profile as any)?.marketplace_enabled ?? false,
       });
-      setMarketplaceEnabled(profile.marketplace_enabled || false);
-      setPortfolioLink(profile.portfolio_link || `${window.location.origin}/portfolio/${profile.username || profile.user_id}`);
+      setMarketplaceEnabled((profile as any)?.marketplace_enabled || false);
+      setPortfolioLink((profile as any)?.portfolio_link || `${window.location.origin}/portfolio/${profile.username || profile.user_id}`);
     }
   }, [profile]);
 
