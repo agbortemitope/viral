@@ -36,7 +36,7 @@ export const useDocuments = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data || []);
+      setDocuments((data as UserDocument[]) || []);
     } catch (error: any) {
       console.error('Error fetching documents:', error);
     } finally {

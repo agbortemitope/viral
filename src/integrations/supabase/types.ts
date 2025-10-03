@@ -117,7 +117,9 @@ export type Database = {
           hourly_rate: number | null
           id: string
           marketing_communications: boolean | null
+          marketplace_enabled: boolean | null
           portfolio_description: string | null
+          portfolio_link: string | null
           portfolio_title: string | null
           push_notifications: boolean | null
           skills: string[] | null
@@ -138,7 +140,9 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           marketing_communications?: boolean | null
+          marketplace_enabled?: boolean | null
           portfolio_description?: string | null
+          portfolio_link?: string | null
           portfolio_title?: string | null
           push_notifications?: boolean | null
           skills?: string[] | null
@@ -159,7 +163,9 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           marketing_communications?: boolean | null
+          marketplace_enabled?: boolean | null
           portfolio_description?: string | null
+          portfolio_link?: string | null
           portfolio_title?: string | null
           push_notifications?: boolean | null
           skills?: string[] | null
@@ -225,6 +231,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          file_size: number
+          file_url: string
+          id: string
+          is_primary: boolean | null
+          mime_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_size: number
+          file_url: string
+          id?: string
+          is_primary?: boolean | null
+          mime_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_size?: number
+          file_url?: string
+          id?: string
+          is_primary?: boolean | null
+          mime_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_interactions: {
         Row: {

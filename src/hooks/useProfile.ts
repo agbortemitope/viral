@@ -17,6 +17,8 @@ interface Profile {
   portfolio_description: string | null;
   hourly_rate: number;
   available: boolean;
+  marketplace_enabled: boolean;
+  portfolio_link: string | null;
   created_at: string;
   updated_at: string;
 }

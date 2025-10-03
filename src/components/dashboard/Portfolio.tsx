@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useDocuments } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -22,7 +23,11 @@ import {
   DollarSign,
   Tag,
   Image as ImageIcon,
-  Loader2
+  Loader2,
+  Upload,
+  FileText,
+  Copy,
+  Share2
 } from "lucide-react";
 
 interface PortfolioItem {
@@ -50,10 +55,13 @@ const categories = [
 const Portfolio = () => {
   const { user } = useAuth();
   const { profile, updateProfile, loading: profileLoading } = useProfile();
+  const { documents, uploading, uploadDocument, deleteDocument } = useDocuments();
   const { toast } = useToast();
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [marketplaceEnabled, setMarketplaceEnabled] = useState(false);
+  const [portfolioLink, setPortfolioLink] = useState("");
   
   const [profileData, setProfileData] = useState<{
     portfolio_title: string;
@@ -92,6 +100,8 @@ const Portfolio = () => {
         hourly_rate: profile.hourly_rate || 0,
         available: profile.available || true,
       });
+      setMarketplaceEnabled(profile.marketplace_enabled || false);
+      setPortfolioLink(profile.portfolio_link || `${window.location.origin}/portfolio/${profile.username || profile.user_id}`);
     }
   }, [profile]);
 
@@ -125,8 +135,17 @@ const Portfolio = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const { error } = await updateProfile(profileData);
+      // Generate portfolio link if not exists
+      const link = portfolioLink || `${window.location.origin}/portfolio/${profile?.username || profile?.user_id}`;
+      
+      const { error } = await updateProfile({
+        ...profileData,
+        marketplace_enabled: marketplaceEnabled,
+        portfolio_link: link,
+      });
       if (error) throw error;
+      
+      setPortfolioLink(link);
       
       toast({
         title: "Portfolio updated",
@@ -142,6 +161,23 @@ const Portfolio = () => {
       setSaving(false);
     }
   };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(portfolioLink);
+    toast({
+      title: "Link copied!",
+      description: "Portfolio link copied to clipboard",
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await uploadDocument(file, 'cv');
+  };
+
+  const cvDocuments = documents.filter(d => d.document_type === 'cv');
 
   const handleSaveItem = async () => {
     setSaving(true);
@@ -384,10 +420,100 @@ const Portfolio = () => {
             />
           </div>
 
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="flex items-center gap-2">
+                <Share2 className="h-4 w-4" />
+                Host on Marketplace
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Make your portfolio visible on the marketplace
+              </p>
+            </div>
+            <Switch
+              checked={marketplaceEnabled}
+              onCheckedChange={setMarketplaceEnabled}
+            />
+          </div>
+
+          {portfolioLink && (
+            <div>
+              <Label>Shareable Portfolio Link</Label>
+              <div className="flex gap-2 mt-2">
+                <Input value={portfolioLink} readOnly />
+                <Button variant="outline" onClick={handleCopyLink}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           <Button onClick={handleSaveProfile} disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Save Portfolio Profile
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* CV Upload Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            CV / Resume
+          </CardTitle>
+          <CardDescription>
+            Upload your CV or resume to share with potential clients
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="cv-upload">Upload CV</Label>
+            <div className="flex gap-2 mt-2">
+              <Input
+                id="cv-upload"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleFileUpload}
+                disabled={uploading}
+              />
+              <Button disabled={uploading}>
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Accepted formats: PDF, DOC, DOCX (Max 10MB)
+            </p>
+          </div>
+
+          {cvDocuments.length > 0 && (
+            <div className="space-y-2">
+              <Label>Uploaded CVs</Label>
+              {cvDocuments.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{doc.file_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(doc.file_size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    {doc.is_primary && (
+                      <Badge variant="secondary">Primary</Badge>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteDocument(doc.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
