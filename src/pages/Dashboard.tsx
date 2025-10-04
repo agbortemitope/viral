@@ -6,8 +6,6 @@ import CreateAdModal from "@/components/CreateAdModal";
 import AccountSettings from "@/components/dashboard/AccountSettings";
 import Portfolio from "@/components/dashboard/Portfolio";
 import Analytics from "@/components/dashboard/Analytics";
-import DocumentUpload from "@/components/dashboard/DocumentUpload";
-import MarketplaceListing from "@/components/dashboard/MarketplaceListing";
 import AdvertiserAnalytics from "@/components/dashboard/AdvertiserAnalytics";
 import DashboardCalendar from "@/components/dashboard/Calendar";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -153,12 +151,10 @@ const Dashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-              <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="analytics">Ad Analytics</TabsTrigger>
             </TabsList>
@@ -322,14 +318,6 @@ const Dashboard = () => {
 
             <TabsContent value="portfolio">
               <Portfolio />
-            </TabsContent>
-
-            <TabsContent value="documents">
-              <DocumentUpload />
-            </TabsContent>
-
-            <TabsContent value="marketplace">
-              <MarketplaceListing />
             </TabsContent>
 
             <TabsContent value="settings">
