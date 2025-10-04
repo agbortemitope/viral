@@ -198,59 +198,124 @@ const Marketplace = () => {
 
         {/* Details Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{selectedListing?.title}</DialogTitle>
-              <DialogDescription>{selectedListing?.category}</DialogDescription>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <DialogTitle className="text-2xl mb-2">{selectedListing?.title}</DialogTitle>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge className={getTypeColor(selectedListing?.category)}>
+                      {selectedListing?.category}
+                    </Badge>
+                    {selectedListing?.subcategory && (
+                      <Badge variant="outline">{selectedListing.subcategory}</Badge>
+                    )}
+                    <div className="flex items-center space-x-1 bg-success/20 px-2 py-1 rounded-full">
+                      <Star className="h-3 w-3 text-success" />
+                      <span className="text-xs font-bold">{selectedListing?.rating.toFixed(1)}</span>
+                      <span className="text-xs text-muted-foreground">({selectedListing?.review_count} reviews)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </DialogHeader>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Description */}
               <div>
-                <h4 className="font-semibold mb-2">Description</h4>
-                <p className="text-muted-foreground">{selectedListing?.description}</p>
+                <h4 className="font-semibold text-lg mb-2">About This Service</h4>
+                <p className="text-muted-foreground leading-relaxed">{selectedListing?.description}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-1 flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
+              {/* Key Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
                     Pricing
                   </h4>
                   <p className="text-muted-foreground">
-                    ₦{selectedListing?.price_min.toLocaleString()} - ₦{selectedListing?.price_max.toLocaleString()} / {selectedListing?.pricing_type}
+                    ₦{selectedListing?.price_min.toLocaleString()} - ₦{selectedListing?.price_max.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    Per {selectedListing?.pricing_type}
                   </p>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-1 flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
+
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
                     Location
                   </h4>
                   <p className="text-muted-foreground">
-                    {selectedListing?.location || 'Remote'} {selectedListing?.remote_work && '• Remote Available'}
+                    {selectedListing?.location || 'Remote'}
                   </p>
+                  {selectedListing?.remote_work && (
+                    <p className="text-sm text-success mt-1">✓ Remote work available</p>
+                  )}
+                </div>
+
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Building className="h-4 w-4 text-primary" />
+                    Experience Level
+                  </h4>
+                  <p className="text-muted-foreground capitalize">
+                    {selectedListing?.experience_level}
+                  </p>
+                </div>
+
+                {selectedListing?.delivery_time && (
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      Delivery Time
+                    </h4>
+                    <p className="text-muted-foreground">
+                      {selectedListing.delivery_time}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Engagement Stats */}
+              <div className="flex items-center gap-6 p-4 bg-muted/20 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {selectedListing?.views_count} views
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {selectedListing?.contact_count} contacts
+                  </span>
                 </div>
               </div>
 
+              {/* How to Apply */}
               {selectedListing?.application_instructions && (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
+                <div className="bg-primary/5 border border-primary/20 p-5 rounded-lg">
+                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
                     How to Apply
                   </h4>
-                  <p className="text-muted-foreground whitespace-pre-wrap">
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
                     {selectedListing.application_instructions}
                   </p>
                 </div>
               )}
 
+              {/* Action Button */}
               <Button 
-                className="w-full" 
+                className="w-full h-12 text-base" 
                 onClick={() => {
                   incrementContacts(selectedListing?.id);
                   setIsDialogOpen(false);
                 }}
               >
-                I've Applied / Contacted
+                Mark as Applied / Contacted
               </Button>
             </div>
           </DialogContent>
