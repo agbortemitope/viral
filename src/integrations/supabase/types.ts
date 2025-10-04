@@ -14,6 +14,109 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_demographics: {
+        Row: {
+          age_group: string | null
+          content_id: string
+          created_at: string
+          device_type: string | null
+          gender: string | null
+          id: string
+          interaction_count: number | null
+          interaction_type: string
+          location_city: string | null
+          location_country: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_group?: string | null
+          content_id: string
+          created_at?: string
+          device_type?: string | null
+          gender?: string | null
+          id?: string
+          interaction_count?: number | null
+          interaction_type: string
+          location_city?: string | null
+          location_country?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_group?: string | null
+          content_id?: string
+          created_at?: string
+          device_type?: string | null
+          gender?: string | null
+          id?: string
+          interaction_count?: number | null
+          interaction_type?: string
+          location_city?: string | null
+          location_country?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_demographics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advertiser_analytics: {
+        Row: {
+          avg_cpc: number | null
+          content_id: string
+          created_at: string
+          ctr: number | null
+          id: string
+          total_clicks: number | null
+          total_conversions: number | null
+          total_spend: number | null
+          total_views: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_cpc?: number | null
+          content_id: string
+          created_at?: string
+          ctr?: number | null
+          id?: string
+          total_clicks?: number | null
+          total_conversions?: number | null
+          total_spend?: number | null
+          total_views?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_cpc?: number | null
+          content_id?: string
+          created_at?: string
+          ctr?: number | null
+          id?: string
+          total_clicks?: number | null
+          total_conversions?: number | null
+          total_spend?: number | null
+          total_views?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advertiser_analytics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content: {
         Row: {
           budget: number
@@ -62,6 +165,81 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      marketplace_listings: {
+        Row: {
+          availability: string
+          category: string
+          contact_count: number | null
+          created_at: string
+          delivery_time: string | null
+          description: string
+          experience_level: string
+          featured: boolean | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          price_max: number
+          price_min: number
+          pricing_type: string
+          rating: number | null
+          remote_work: boolean | null
+          review_count: number | null
+          subcategory: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          views_count: number | null
+        }
+        Insert: {
+          availability?: string
+          category: string
+          contact_count?: number | null
+          created_at?: string
+          delivery_time?: string | null
+          description: string
+          experience_level?: string
+          featured?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          price_max?: number
+          price_min?: number
+          pricing_type?: string
+          rating?: number | null
+          remote_work?: boolean | null
+          review_count?: number | null
+          subcategory?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          views_count?: number | null
+        }
+        Update: {
+          availability?: string
+          category?: string
+          contact_count?: number | null
+          created_at?: string
+          delivery_time?: string | null
+          description?: string
+          experience_level?: string
+          featured?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          price_max?: number
+          price_min?: number
+          pricing_type?: string
+          rating?: number | null
+          remote_work?: boolean | null
+          review_count?: number | null
+          subcategory?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          views_count?: number | null
         }
         Relationships: []
       }
@@ -313,6 +491,27 @@ export type Database = {
     Functions: {
       calculate_and_distribute_rewards: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      increment_listing_contacts: {
+        Args: { listing_id: string }
+        Returns: undefined
+      }
+      increment_listing_views: {
+        Args: { listing_id: string }
+        Returns: undefined
+      }
+      track_ad_demographics: {
+        Args: {
+          p_age_group?: string
+          p_content_id: string
+          p_device_type?: string
+          p_gender?: string
+          p_interaction_type: string
+          p_location_city?: string
+          p_location_country?: string
+          p_user_id: string
+        }
         Returns: undefined
       }
     }

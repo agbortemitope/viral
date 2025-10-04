@@ -12,11 +12,11 @@ interface MarketplaceListing {
   subcategory?: string;
   price_min: number;
   price_max: number;
-  pricing_type: 'hourly' | 'fixed' | 'negotiable';
-  availability: 'available' | 'busy' | 'unavailable';
+  pricing_type: string;
+  availability: string;
   location?: string;
   remote_work: boolean;
-  experience_level: 'beginner' | 'intermediate' | 'expert';
+  experience_level: string;
   delivery_time?: string;
   featured: boolean;
   views_count: number;
@@ -52,19 +52,14 @@ export const useMarketplace = () => {
       const { data, error } = await supabase
         .from('marketplace_listings')
         .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url,
-            username
-          )
+          *
         `)
         .eq('is_active', true)
         .order('featured', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setListings(data || []);
+      setListings((data as any) || []);
     } catch (error: any) {
       console.error('Error fetching marketplace listings:', error);
     } finally {
@@ -88,16 +83,16 @@ export const useMarketplace = () => {
     }
   };
 
-  const createListing = async (listingData: Partial<MarketplaceListing>) => {
+  const createListing = async (listingData: Partial<MarketplaceListing> & { title: string; description: string; category: string }) => {
     try {
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
         .from('marketplace_listings')
-        .insert({
+        .insert([{
           ...listingData,
           user_id: user.id,
-        })
+        } as any])
         .select()
         .single();
 
@@ -163,12 +158,7 @@ export const useMarketplace = () => {
 
   const incrementContacts = async (listingId: string) => {
     try {
-      const { error } = await supabase
-        .from('marketplace_listings')
-        .update({ contact_count: supabase.sql`contact_count + 1` })
-        .eq('id', listingId);
-
-      if (error) throw error;
+      await supabase.rpc('increment_listing_contacts', { listing_id: listingId });
     } catch (error) {
       console.error('Error incrementing contacts:', error);
     }

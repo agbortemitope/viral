@@ -8,9 +8,10 @@ interface AdvertiserAnalytics {
   total_clicks: number;
   total_conversions: number;
   ctr: number; // Click-through rate
-  cpc: number; // Cost per click
-  cpm: number; // Cost per mille
-  date_tracked: string;
+  avg_cpc: number;
+  cpc?: number; // Cost per click
+  cpm?: number; // Cost per mille
+  date_tracked?: string;
 }
 
 interface DemographicData {
@@ -159,12 +160,13 @@ export const useAdvertiserAnalytics = () => {
     try {
       await supabase.rpc('track_ad_demographics', {
         p_content_id: contentId,
+        p_user_id: user?.id,
+        p_interaction_type: interactionType,
         p_age_group: ageGroup,
         p_gender: gender,
-        p_country: country,
-        p_city: city,
-        p_device: deviceType,
-        p_interaction_type: interactionType,
+        p_location_country: country,
+        p_location_city: city,
+        p_device_type: deviceType,
       });
 
       // Refresh data after tracking
