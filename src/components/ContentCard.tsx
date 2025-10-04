@@ -42,7 +42,7 @@ const ContentCard = ({
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleInteraction = async () => {
-    if (!onInteraction || hasInteracted) return;
+    if (!onInteraction || hasInteracted || isInteracting) return;
 
     setIsInteracting(true);
     try {
@@ -192,9 +192,10 @@ const ContentCard = ({
         <Button
           variant={hasInteracted ? "secondary" : "earnings"}
           size="sm"
-          className="mt-4 w-full"
+          className="mt-4 w-full cursor-pointer"
           onClick={handleInteraction}
           disabled={isInteracting || hasInteracted}
+          style={hasInteracted ? { pointerEvents: 'none', opacity: 0.6 } : {}}
         >
           {isInteracting ? (
             <>Loading...</>

@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Coins, MapPin, Calendar, Search, Building, Loader as Loader2, Star, DollarSign, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Coins, MapPin, Calendar, Search, Building, Loader as Loader2, Star, DollarSign, Eye, FileText } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -25,6 +26,8 @@ interface MarketplaceItem {
 const Marketplace = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedListing, setSelectedListing] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { user } = useAuth();
   const { listings, loading, incrementViews, incrementContacts } = useMarketplace();
 
@@ -179,10 +182,11 @@ const Marketplace = () => {
                       variant="outline"
                       onClick={() => {
                         incrementViews(item.id);
-                        incrementContacts(item.id);
+                        setSelectedListing(item);
+                        setIsDialogOpen(true);
                       }}
                     >
-                      Contact Provider
+                      View Details & Apply
                     </Button>
                   </CardContent>
                 </Card>
@@ -191,6 +195,66 @@ const Marketplace = () => {
           </div>
         </div>
         <Footer />
+
+        {/* Details Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedListing?.title}</DialogTitle>
+              <DialogDescription>{selectedListing?.category}</DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Description</h4>
+                <p className="text-muted-foreground">{selectedListing?.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold mb-1 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Pricing
+                  </h4>
+                  <p className="text-muted-foreground">
+                    ₦{selectedListing?.price_min.toLocaleString()} - ₦{selectedListing?.price_max.toLocaleString()} / {selectedListing?.pricing_type}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-1 flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Location
+                  </h4>
+                  <p className="text-muted-foreground">
+                    {selectedListing?.location || 'Remote'} {selectedListing?.remote_work && '• Remote Available'}
+                  </p>
+                </div>
+              </div>
+
+              {selectedListing?.application_instructions && (
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    How to Apply
+                  </h4>
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {selectedListing.application_instructions}
+                  </p>
+                </div>
+              )}
+
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  incrementContacts(selectedListing?.id);
+                  setIsDialogOpen(false);
+                }}
+              >
+                I've Applied / Contacted
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );

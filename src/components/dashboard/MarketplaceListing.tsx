@@ -10,18 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { useMarketplace } from "@/hooks/useMarketplace";
 import { Store, CreditCard as Edit, Eye, MessageCircle, Star, MapPin, Clock, DollarSign, Loader as Loader2, Plus } from "lucide-react";
 
-const categories = [
-  "Design & Creative",
-  "Web Development",
-  "Mobile Development", 
-  "Video & Animation",
-  "Writing & Content",
-  "Marketing & SEO",
-  "Photography",
-  "Consulting",
-  "Data & Analytics",
-  "Other"
-];
 
 const experienceLevels = [
   { value: 'beginner', label: 'Beginner (0-2 years)' },
@@ -47,6 +35,7 @@ const MarketplaceListing = () => {
     remote_work: true,
     experience_level: "intermediate" as "beginner" | "intermediate" | "expert",
     delivery_time: "",
+    application_instructions: "",
     is_active: true,
   });
 
@@ -65,6 +54,7 @@ const MarketplaceListing = () => {
         remote_work: userListing.remote_work,
         experience_level: userListing.experience_level as "beginner" | "intermediate" | "expert",
         delivery_time: userListing.delivery_time || "",
+        application_instructions: userListing.application_instructions || "",
         is_active: userListing.is_active,
       });
     }
@@ -210,19 +200,13 @@ const MarketplaceListing = () => {
                 </div>
                 <div>
                   <Label htmlFor="category">Category *</Label>
-                  <Select 
-                    value={formData.category} 
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="e.g., Web Development, Design, Writing"
+                    required
+                  />
                 </div>
               </div>
 
@@ -235,6 +219,17 @@ const MarketplaceListing = () => {
                   placeholder="Describe your services, experience, and what clients can expect..."
                   className="min-h-[120px]"
                   required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="application_instructions">How to Apply / Contact Instructions</Label>
+                <Textarea
+                  id="application_instructions"
+                  value={formData.application_instructions}
+                  onChange={(e) => setFormData({ ...formData, application_instructions: e.target.value })}
+                  placeholder="Provide instructions on how clients can apply or contact you (e.g., email address, portfolio link, application form)"
+                  className="min-h-[100px]"
                 />
               </div>
 

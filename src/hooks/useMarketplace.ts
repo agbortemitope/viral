@@ -18,6 +18,7 @@ interface MarketplaceListing {
   remote_work: boolean;
   experience_level: string;
   delivery_time?: string;
+  application_instructions?: string;
   featured: boolean;
   views_count: number;
   contact_count: number;

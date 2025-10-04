@@ -170,6 +170,7 @@ export type Database = {
       }
       marketplace_listings: {
         Row: {
+          application_instructions: string | null
           availability: string
           category: string
           contact_count: number | null
@@ -194,6 +195,7 @@ export type Database = {
           views_count: number | null
         }
         Insert: {
+          application_instructions?: string | null
           availability?: string
           category: string
           contact_count?: number | null
@@ -218,6 +220,7 @@ export type Database = {
           views_count?: number | null
         }
         Update: {
+          application_instructions?: string | null
           availability?: string
           category?: string
           contact_count?: number | null
