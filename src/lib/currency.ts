@@ -12,20 +12,24 @@ export interface LocationData {
   currencySymbol: string;
 }
 
-// Currency conversion rates (in a real app, this would come from an API)
+// Currency conversion rates: 100 coins = 500 naira as base
+// All rates are calculated relative to this base rate
+const COINS_TO_NGN = 500; // 100 coins = 500 NGN
+const BASE_COINS = 100;
+
 const CURRENCY_RATES: Record<string, CurrencyRate> = {
-  USD: { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1 },
-  EUR: { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.85 },
-  GBP: { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.73 },
-  NGN: { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', rate: 411 },
-  CAD: { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 1.25 },
-  AUD: { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.35 },
-  JPY: { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 110 },
-  INR: { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 74 },
-  ZAR: { code: 'ZAR', name: 'South African Rand', symbol: 'R', rate: 15 },
-  KES: { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh', rate: 110 },
-  GHS: { code: 'GHS', name: 'Ghanaian Cedi', symbol: '₵', rate: 6 },
-  EGP: { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£', rate: 31 },
+  NGN: { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', rate: COINS_TO_NGN / BASE_COINS }, // 5 NGN per coin
+  USD: { code: 'USD', name: 'US Dollar', symbol: '$', rate: 0.66 }, // ~$0.66 per coin (500 NGN ≈ $0.66 at 760 NGN/$)
+  EUR: { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.60 }, // ~€0.60 per coin
+  GBP: { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.52 }, // ~£0.52 per coin
+  CAD: { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 0.90 },
+  AUD: { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.00 },
+  JPY: { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 98 },
+  INR: { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 55 },
+  ZAR: { code: 'ZAR', name: 'South African Rand', symbol: 'R', rate: 12 },
+  KES: { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh', rate: 85 },
+  GHS: { code: 'GHS', name: 'Ghanaian Cedi', symbol: '₵', rate: 9 },
+  EGP: { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£', rate: 32 },
 };
 
 // Country to currency mapping
@@ -85,9 +89,21 @@ export function convertCurrency(amount: number, fromCurrency: string, toCurrency
   const fromRate = CURRENCY_RATES[fromCurrency]?.rate || 1;
   const toRate = CURRENCY_RATES[toCurrency]?.rate || 1;
   
-  // Convert to USD first, then to target currency
-  const usdAmount = amount / fromRate;
-  return Math.round(usdAmount * toRate * 100) / 100; // Round to 2 decimal places
+  // Direct conversion based on rates
+  const result = (amount * toRate) / fromRate;
+  return Math.round(result * 100) / 100; // Round to 2 decimal places
+}
+
+// Convert coins to any currency
+export function coinsToFiat(coins: number, currency: string): number {
+  const rate = CURRENCY_RATES[currency]?.rate || 1;
+  return Math.round(coins * rate * 100) / 100;
+}
+
+// Convert fiat to coins
+export function fiatToCoins(amount: number, currency: string): number {
+  const rate = CURRENCY_RATES[currency]?.rate || 1;
+  return Math.round((amount / rate) * 100) / 100;
 }
 
 export function formatCurrency(amount: number, currency: string): string {

@@ -293,12 +293,15 @@ export type Database = {
           categories: string[] | null
           coins: number
           created_at: string
+          email: string | null
           email_notifications: boolean | null
           full_name: string | null
           hourly_rate: number | null
           id: string
+          linkedin_url: string | null
           marketing_communications: boolean | null
           marketplace_enabled: boolean | null
+          phone_number: string | null
           portfolio_description: string | null
           portfolio_link: string | null
           portfolio_title: string | null
@@ -308,6 +311,8 @@ export type Database = {
           updated_at: string
           user_id: string
           username: string | null
+          website_url: string | null
+          whatsapp_number: string | null
         }
         Insert: {
           available?: boolean | null
@@ -316,12 +321,15 @@ export type Database = {
           categories?: string[] | null
           coins?: number
           created_at?: string
+          email?: string | null
           email_notifications?: boolean | null
           full_name?: string | null
           hourly_rate?: number | null
           id?: string
+          linkedin_url?: string | null
           marketing_communications?: boolean | null
           marketplace_enabled?: boolean | null
+          phone_number?: string | null
           portfolio_description?: string | null
           portfolio_link?: string | null
           portfolio_title?: string | null
@@ -331,6 +339,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           username?: string | null
+          website_url?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
           available?: boolean | null
@@ -339,12 +349,15 @@ export type Database = {
           categories?: string[] | null
           coins?: number
           created_at?: string
+          email?: string | null
           email_notifications?: boolean | null
           full_name?: string | null
           hourly_rate?: number | null
           id?: string
+          linkedin_url?: string | null
           marketing_communications?: boolean | null
           marketplace_enabled?: boolean | null
+          phone_number?: string | null
           portfolio_description?: string | null
           portfolio_link?: string | null
           portfolio_title?: string | null
@@ -354,6 +367,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string | null
+          website_url?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }

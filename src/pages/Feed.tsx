@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ContentCard from "@/components/ContentCard";
+import ContentCard from "@/components/ContentCardWithDialog";
 import CreateAdModal from "@/components/CreateAdModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useInteractions } from "@/hooks/useInteractions";
@@ -181,21 +181,21 @@ const Feed = () => {
     <div className="min-h-screen bg-gradient-page">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div className="text-center flex-1">
-              <h1 className="text-3xl font-bold mb-2 text-foreground">
-                Discover Opportunities
-              </h1>
-              <p className="text-muted-foreground">
-                Explore jobs, events, ads, and more. Earn coins for every interaction!
-              </p>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
+              <div className="text-center md:text-left flex-1">
+                <h1 className="text-2xl md:text-3xl font-bold mb-2 text-foreground">
+                  Discover Opportunities
+                </h1>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Explore jobs, events, ads, and more. Earn coins for every interaction!
+                </p>
+              </div>
+              <Button onClick={() => setCreateAdOpen(true)} className="w-full md:w-auto">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Ad
+              </Button>
             </div>
-            <Button onClick={() => setCreateAdOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Ad
-            </Button>
-          </div>
           
           <CreateAdModal open={createAdOpen} onOpenChange={setCreateAdOpen} onSuccess={fetchContent} />
 
@@ -221,8 +221,7 @@ const Feed = () => {
               </p>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredContent.map((item) => (
+          <div className="grid grid-cols-1 gap-6">{filteredContent.map((item) => (
                 <ContentCard
                   key={item.id}
                   title={item.title}

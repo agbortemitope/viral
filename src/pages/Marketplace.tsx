@@ -70,17 +70,19 @@ const Marketplace = () => {
       <div className="min-h-screen bg-gradient-page">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Creative Marketplace</h1>
-            <p className="text-muted-foreground">Where brands find talented creators, designers, and developers</p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-6 md:mb-8 gap-3">
+            <div className="space-y-2">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">Marketplace</h1>
+              <p className="text-sm md:text-base text-muted-foreground">Discover talented professionals and services</p>
+            </div>
           </div>
 
           {/* Search and Filters */}
-          <div className="mb-8 space-y-4">
+          <div className="mb-6 md:mb-8 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search creative opportunities..."
+                placeholder="Search opportunities..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -93,49 +95,19 @@ const Marketplace = () => {
                 onClick={() => setSelectedType("all")}
                 size="sm"
               >
-                All Services
+                All
               </Button>
-              <Button
-                variant={selectedType === "Design & Creative" ? "default" : "outline"}
-                onClick={() => setSelectedType("Design & Creative")}
-                size="sm"
-              >
-                Design & Creative
-              </Button>
-              <Button
-                variant={selectedType === "Web Development" ? "default" : "outline"}
-                onClick={() => setSelectedType("Web Development")}
-                size="sm"
-              >
-                Web Development
-              </Button>
-              <Button
-                variant={selectedType === "Video & Animation" ? "default" : "outline"}
-                onClick={() => setSelectedType("Video & Animation")}
-                size="sm"
-              >
-                Video & Animation
-              </Button>
-              <Button
-                variant={selectedType === "Writing & Content" ? "default" : "outline"}
-                onClick={() => setSelectedType("Writing & Content")}
-                size="sm"
-              >
-                Writing & Content
-              </Button>
-              <Button
-                variant={selectedType === "Marketing & SEO" ? "default" : "outline"}
-                onClick={() => setSelectedType("Marketing & SEO")}
-                size="sm"
-              >
-                Marketing & SEO
-              </Button>
+              <Input
+                placeholder="Filter by category..."
+                value={selectedType === "all" ? "" : selectedType}
+                onChange={(e) => setSelectedType(e.target.value || "all")}
+                className="max-w-xs"
+              />
             </div>
           </div>
 
           {/* Items Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">{filteredItems.length === 0 ? (
               <div className="col-span-full">
                 <Card className="p-8 text-center bg-gradient-card border-border/50">
                   <p className="text-muted-foreground mb-2">

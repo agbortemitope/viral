@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getUserLocation, convertCurrency, formatCurrency, getAllCurrencies } from "@/lib/currency";
+import { getUserLocation, convertCurrency, formatCurrency, getAllCurrencies, coinsToFiat, fiatToCoins } from "@/lib/currency";
 import {
   Dialog,
   DialogContent,
@@ -49,12 +49,10 @@ const WalletPage = () => {
     bankName: "",
   });
 
-  // Conversion rates: These currencies = 100 coins
-  const conversionRates: { [key: string]: number } = {
-    USD: 1, // $1 = 100 coins
-    GBP: 1, // £1 = 100 coins
-    EUR: 1, // €1 = 100 coins
-    NGN: 1000, // ₦1000 = 100 coins
+  // Conversion rate info: 100 coins = ₦500
+  const conversionInfo = {
+    base: "100 coins = ₦500",
+    note: "Conversion rates are calculated based on current exchange rates"
   };
 
   useEffect(() => {
@@ -75,6 +73,7 @@ const WalletPage = () => {
       setLocationLoading(false);
     }
   };
+
   const fetchTransactions = async () => {
     try {
       const { data, error } = await supabase
@@ -92,8 +91,7 @@ const WalletPage = () => {
   };
 
   const calculateCoins = (fiatAmount: number, currency: string) => {
-    const rate = conversionRates[currency] || 1;
-    return Math.round((fiatAmount / rate) * 100);
+    return Math.round(fiatToCoins(fiatAmount, currency));
   };
 
   const handlePurchaseCoins = async () => {
@@ -112,7 +110,6 @@ const WalletPage = () => {
     setLoading(true);
     
     try {
-      // Create purchase transaction record
       const { error: transactionError } = await supabase
         .from("transactions")
         .insert({
@@ -123,13 +120,12 @@ const WalletPage = () => {
           status: "completed",
           currency: selectedCurrency,
           fiat_amount: fiatAmount,
-          exchange_rate: `${conversionRates[selectedCurrency]} ${selectedCurrency} = 100 coins`,
+          exchange_rate: `100 coins = ₦500 (base rate)`,
           payment_method: "card"
         });
 
       if (transactionError) throw transactionError;
 
-      // Update user's coin balance
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ 
@@ -169,8 +165,6 @@ const WalletPage = () => {
 
     setLoading(true);
     try {
-      // In production, this would securely store encrypted bank details
-      // For now, we'll just show success
       toast({
         title: "Bank account linked!",
         description: "Your bank account has been successfully linked",
@@ -202,7 +196,6 @@ const WalletPage = () => {
       return;
     }
 
-
     if (amount > (profile?.coins || 0)) {
       toast({
         title: "Insufficient balance",
@@ -214,20 +207,18 @@ const WalletPage = () => {
 
     setLoading(true);
     try {
-      // Create withdrawal transaction record
       const { error: transactionError } = await supabase
         .from("transactions")
         .insert({
           user_id: user?.id,
           transaction_type: "withdrawal",
-          amount: -amount, // Negative for withdrawal
+          amount: -amount,
           description: `Withdrawal of ${formatCurrency(displayAmount, selectedCurrency)}`,
-          status: "pending" // Withdrawals start as pending for review
+          status: "pending"
         });
 
       if (transactionError) throw transactionError;
 
-      // Update user's coin balance
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ 
@@ -261,19 +252,12 @@ const WalletPage = () => {
     .reduce((sum, t) => sum + t.amount, 0);
   const withdrawableAmount = walletBalance - pendingEarnings;
 
-  const convertedBalance = convertCurrency(walletBalance, "USD", selectedCurrency);
-  const convertedPending = convertCurrency(pendingEarnings, "USD", selectedCurrency);
-  const convertedWithdrawable = convertCurrency(Math.max(0, withdrawableAmount), "USD", selectedCurrency);
+  const convertedBalance = coinsToFiat(walletBalance, selectedCurrency);
+  const convertedPending = coinsToFiat(pendingEarnings, selectedCurrency);
+  const convertedWithdrawable = coinsToFiat(Math.max(0, withdrawableAmount), selectedCurrency);
 
-  // Convert deposit/withdrawal amounts for processing
-  const processDeposit = (amount: number) => {
-    // Convert from selected currency to USD (base currency)
-    return Math.round(convertCurrency(amount, selectedCurrency, "USD"));
-  };
-
-  const processWithdrawal = (amount: number) => {
-    // Convert from selected currency to USD (base currency)
-    return Math.round(convertCurrency(amount, selectedCurrency, "USD"));
+  const processWithdrawal = (fiatAmount: number) => {
+    return Math.round(fiatToCoins(fiatAmount, selectedCurrency));
   };
 
   const getTransactionIcon = (type: string) => {
@@ -315,28 +299,29 @@ const WalletPage = () => {
       </ProtectedRoute>
     );
   }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-page">
         <Header />
         
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center space-x-3 mb-8">
-            <Wallet className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Wallet</h1>
+        <main className="container mx-auto px-4 py-4 md:py-8">
+          <div className="flex items-center space-x-3 mb-6 md:mb-8">
+            <Wallet className="h-6 md:h-8 w-6 md:w-8 text-primary" />
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Wallet</h1>
           </div>
 
           {/* Currency Selector */}
-          <Card className="p-4 mb-6 bg-gradient-card border-border/50">
-            <div className="flex items-center justify-between">
+          <Card className="p-3 md:p-4 mb-4 md:mb-6 bg-gradient-card border-border/50">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-foreground">Display Currency</h3>
-                <p className="text-sm text-muted-foreground">
-                  Auto-detected: {userCurrency} (based on your location)
+                <h3 className="font-semibold text-sm md:text-base text-foreground">Display Currency</h3>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  Auto-detected: {userCurrency}
                 </p>
               </div>
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full md:w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -349,49 +334,48 @@ const WalletPage = () => {
               </Select>
             </div>
           </Card>
+
           {/* Balance Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="p-6 bg-gradient-card border-border/50">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+            <Card className="p-4 md:p-6 bg-gradient-card border-border/50">
               <div className="flex items-center space-x-3">
-                <div className="bg-primary/20 p-3 rounded-lg">
-                  <Coins className="h-6 w-6 text-primary" />
+                <div className="bg-primary/20 p-2 md:p-3 rounded-lg">
+                  <Coins className="h-5 md:h-6 w-5 md:w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Balance</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">Total Balance</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">
                     {formatCurrency(convertedBalance, selectedCurrency)}
                   </p>
-                  {selectedCurrency !== "USD" && (
-                    <p className="text-xs text-muted-foreground">
-                      {walletBalance} coins
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {walletBalance} coins
+                  </p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6 bg-gradient-card border-border/50">
+            <Card className="p-4 md:p-6 bg-gradient-card border-border/50">
               <div className="flex items-center space-x-3">
-                <div className="bg-accent/20 p-3 rounded-lg">
-                  <ArrowUpCircle className="h-6 w-6 text-accent" />
+                <div className="bg-accent/20 p-2 md:p-3 rounded-lg">
+                  <ArrowUpCircle className="h-5 md:h-6 w-5 md:w-6 text-accent" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending Earnings</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">Pending Earnings</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">
                     {formatCurrency(convertedPending, selectedCurrency)}
                   </p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6 bg-gradient-card border-border/50">
+            <Card className="p-4 md:p-6 bg-gradient-card border-border/50">
               <div className="flex items-center space-x-3">
-                <div className="bg-success/20 p-3 rounded-lg">
-                  <ArrowDownCircle className="h-6 w-6 text-success" />
+                <div className="bg-success/20 p-2 md:p-3 rounded-lg">
+                  <ArrowDownCircle className="h-5 md:h-6 w-5 md:w-6 text-success" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Withdrawable</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">Withdrawable</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">
                     {formatCurrency(convertedWithdrawable, selectedCurrency)}
                   </p>
                 </div>
@@ -399,28 +383,27 @@ const WalletPage = () => {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
             {/* Purchase Coins */}
-            <Card className="p-6 bg-gradient-card border-border/50">
-              <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary" />
+            <Card className="p-4 md:p-6 bg-gradient-card border-border/50">
+              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                <CreditCard className="h-4 md:h-5 w-4 md:w-5 text-primary" />
                 Purchase Coins
               </h2>
               
               <div className="space-y-4">
-                {/* Conversion Rate Display */}
-                <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-                  <p className="text-sm font-medium text-foreground mb-2">Conversion Rates:</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                    <span>$1 = 100 coins</span>
-                    <span>£1 = 100 coins</span>
-                    <span>€1 = 100 coins</span>
-                    <span>₦1,000 = 100 coins</span>
+                <div className="bg-primary/10 p-3 md:p-4 rounded-lg border border-primary/20">
+                  <p className="text-xs md:text-sm font-medium text-foreground mb-2">Base Conversion Rate:</p>
+                  <div className="text-center">
+                    <p className="text-base md:text-lg font-bold text-primary">100 coins = ₦500</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Other currencies calculated at current exchange rates
+                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-foreground mb-2">
                     Amount ({selectedCurrency})
                   </label>
                   <Input
@@ -432,7 +415,7 @@ const WalletPage = () => {
                     step={selectedCurrency === "NGN" ? "100" : "1"}
                   />
                   {purchaseAmount && (
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-xs md:text-sm text-muted-foreground mt-2">
                       You will receive: <span className="font-bold text-primary">
                         {calculateCoins(parseFloat(purchaseAmount), selectedCurrency)} coins
                       </span>
@@ -447,17 +430,36 @@ const WalletPage = () => {
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Purchase Coins"}
                 </Button>
+              </div>
+            </Card>
 
-                {/* Bank Account Section */}
-                <div className="pt-4 border-t border-border/50">
+            {/* Withdrawal Section */}
+            <Card className="p-4 md:p-6 bg-gradient-card border-border/50">
+              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                <ArrowDownCircle className="h-4 md:h-5 w-4 md:w-5 text-success" />
+                Withdraw Funds
+              </h2>
+
+              <div className="space-y-4">
+                <div className="bg-success/10 p-3 md:p-4 rounded-lg border border-success/20">
+                  <p className="text-xs md:text-sm font-medium text-foreground mb-2">Withdrawal Rate:</p>
+                  <div className="text-center">
+                    <p className="text-base md:text-lg font-bold text-success">100 coins = ₦500</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Withdrawals processed in your selected currency
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-border/50">
                   <Dialog open={bankAccountDialogOpen} onOpenChange={setBankAccountDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full" size="sm">
                         <Building2 className="h-4 w-4 mr-2" />
                         Link Bank Account
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-md mx-4">
                       <DialogHeader>
                         <DialogTitle>Link Bank Account</DialogTitle>
                         <DialogDescription>
@@ -520,10 +522,10 @@ const WalletPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-foreground mb-2">
                     Withdraw Amount ({selectedCurrency})
                   </label>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                     <Input
                       type="number"
                       placeholder="Enter amount"
@@ -531,64 +533,72 @@ const WalletPage = () => {
                       onChange={(e) => setWithdrawAmount(e.target.value)}
                       min="0"
                       max={walletBalance}
+                      className="flex-1"
                     />
                     <Button 
                       onClick={handleWithdrawal} 
                       disabled={loading || !withdrawAmount || processWithdrawal(parseFloat(withdrawAmount)) > walletBalance}
                       variant="outline"
-                      className="whitespace-nowrap"
+                      className="w-full sm:w-auto whitespace-nowrap"
                     >
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Withdraw"}
                     </Button>
                   </div>
+                  {withdrawAmount && (
+                    <p className="text-xs md:text-sm text-muted-foreground mt-2">
+                      Deduct: <span className="font-bold text-destructive">
+                        {processWithdrawal(parseFloat(withdrawAmount))} coins
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
+          </div>
 
-            {/* Recent Transactions */}
-            <Card className="p-6 bg-gradient-card border-border/50">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Recent Transactions</h2>
-              
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {transactions.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No transactions yet. Start earning or make a deposit!
-                  </p>
-                ) : (
-                  transactions.map((transaction) => (
-                    <div 
-                      key={transaction.id} 
-                      className="flex items-center justify-between p-4 rounded-lg bg-background/50 border border-border/30"
-                    >
-                      <div className="flex items-center space-x-3">
-                        {getTransactionIcon(transaction.transaction_type)}
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {transaction.description}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(transaction.created_at).toLocaleDateString()} •{" "}
-                            <span className={`font-medium ${
-                              transaction.status === 'completed' 
-                                ? 'text-success' 
-                                : transaction.status === 'pending'
-                                ? 'text-accent'
-                                : 'text-destructive'
-                            }`}>
-                              {transaction.status}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`font-bold ${getAmountColor(transaction.transaction_type, transaction.amount)}`}>
-                        {transaction.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(convertCurrency(transaction.amount, "USD", selectedCurrency)), selectedCurrency)}
+          {/* Recent Transactions */}
+          <Card className="p-4 md:p-6 bg-gradient-card border-border/50 mt-6 md:mt-8">
+            <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Recent Transactions</h2>
+            
+            <div className="space-y-3 md:space-y-4 max-h-96 overflow-y-auto">
+              {transactions.length === 0 ? (
+                <p className="text-sm md:text-base text-muted-foreground text-center py-8">
+                  No transactions yet. Start earning or make a deposit!
+                </p>
+              ) : (
+                transactions.map((transaction) => (
+                  <div 
+                    key={transaction.id} 
+                    className="flex items-center justify-between p-3 md:p-4 rounded-lg bg-background/50 border border-border/30"
+                  >
+                    <div className="flex items-center space-x-2 md:space-x-3 flex-1 min-w-0">
+                      {getTransactionIcon(transaction.transaction_type)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm md:text-base font-medium text-foreground truncate">
+                          {transaction.description}
+                        </p>
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                          {new Date(transaction.created_at).toLocaleDateString()} •{" "}
+                          <span className={`font-medium ${
+                            transaction.status === 'completed' 
+                              ? 'text-success' 
+                              : transaction.status === 'pending'
+                              ? 'text-accent'
+                              : 'text-destructive'
+                          }`}>
+                            {transaction.status}
+                          </span>
+                        </p>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </Card>
-          </div>
+                    <div className={`text-sm md:text-base font-bold whitespace-nowrap ml-2 ${getAmountColor(transaction.transaction_type, transaction.amount)}`}>
+                      {transaction.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(coinsToFiat(transaction.amount, selectedCurrency)), selectedCurrency)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
         </main>
         
         <Footer />
