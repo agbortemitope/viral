@@ -23,7 +23,7 @@ interface ContentItem {
   image_url?: string;
   created_at: string;
   location?: string;
-  contact_info?: string;
+  contact_link?: string;
 }
 
 const Feed = () => {
@@ -230,7 +230,7 @@ const Feed = () => {
                   coins={item.reward_coins}
                   image={item.image_url}
                   location={item.location}
-                  contactInfo={item.contact_info}
+                  contactInfo={item.contact_link}
                   onInteraction={() => handleInteraction(item.id, item.reward_coins)}
                   hasInteracted={interactedItems.has(item.id)}
                 />
