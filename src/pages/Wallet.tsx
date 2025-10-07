@@ -120,7 +120,7 @@ const WalletPage = () => {
           status: "completed",
           currency: selectedCurrency,
           fiat_amount: fiatAmount,
-          exchange_rate: `100 coins = ₦500 (base rate)`,
+          exchange_rate: `Purchase: 100 coins = ₦1500`,
           payment_method: "card"
         });
 
@@ -393,11 +393,11 @@ const WalletPage = () => {
               
               <div className="space-y-4">
                 <div className="bg-primary/10 p-3 md:p-4 rounded-lg border border-primary/20">
-                  <p className="text-xs md:text-sm font-medium text-foreground mb-2">Base Conversion Rate:</p>
+                  <p className="text-xs md:text-sm font-medium text-foreground mb-2">Purchase Rate:</p>
                   <div className="text-center">
-                    <p className="text-base md:text-lg font-bold text-primary">100 coins = ₦500</p>
+                    <p className="text-base md:text-lg font-bold text-primary">100 coins = ₦1,500</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Other currencies calculated at current exchange rates
+                      Pay this rate when buying coins
                     </p>
                   </div>
                 </div>
@@ -446,7 +446,7 @@ const WalletPage = () => {
                   <div className="text-center">
                     <p className="text-base md:text-lg font-bold text-success">100 coins = ₦500</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Withdrawals processed in your selected currency
+                      Receive this rate when withdrawing coins
                     </p>
                   </div>
                 </div>

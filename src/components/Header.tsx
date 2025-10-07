@@ -3,7 +3,6 @@ import { Coins, LogOut, User, Menu, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Link, useNavigate } from "react-router-dom";
-import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -88,10 +87,6 @@ const Header = () => {
                       <User className="h-4 w-4 mr-3" />
                       Profile
                     </Button>
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <span className="text-sm font-medium text-foreground">Theme</span>
-                      <ModeToggle />
-                    </div>
                   </nav>
 
                   <Separator />
@@ -109,9 +104,6 @@ const Header = () => {
             </Sheet>
           ) : (
             <div className="flex items-center space-x-2">
-              <div className="hidden sm:block">
-                <ModeToggle />
-              </div>
               <Link to="/signup">
                 <Button variant="outline" size="sm" className="hidden sm:inline-flex">
                   Sign In

@@ -31,6 +31,7 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
     rewardCoins: "",
     targetAudience: "",
     imageUrl: "",
+    contactLink: "",
     jobType: "",
     salary: "",
     location: "",
@@ -94,6 +95,7 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
           reward_coins: rewardCoins,
           target_audience: formData.targetAudience,
           image_url: formData.imageUrl,
+          contact_link: formData.contactLink,
           status: "active",
           reach_count: 0,
         });
@@ -129,6 +131,7 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
         rewardCoins: "",
         targetAudience: "",
         imageUrl: "",
+        contactLink: "",
         jobType: "",
         salary: "",
         location: "",
@@ -456,6 +459,20 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
                     <Upload className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactLink">Contact Link *</Label>
+                <Input
+                  id="contactLink"
+                  placeholder="https://wa.me/1234567890 or email@example.com"
+                  value={formData.contactLink}
+                  onChange={(e) => setFormData({...formData, contactLink: e.target.value})}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  WhatsApp link, email, or any contact URL where users can reach you
+                </p>
               </div>
 
               <div className="flex gap-4 pt-4">

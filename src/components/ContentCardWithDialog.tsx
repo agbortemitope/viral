@@ -56,6 +56,21 @@ const ContentCardWithDialog = ({
     try {
       await onInteraction();
       setIsDialogOpen(false);
+      
+      // Redirect to contact link after successful interaction
+      if (contactInfo) {
+        // Open contact link in new tab
+        if (contactInfo.includes('@')) {
+          // It's an email
+          window.open(`mailto:${contactInfo}`, '_blank');
+        } else if (contactInfo.startsWith('http')) {
+          // It's a URL
+          window.open(contactInfo, '_blank');
+        } else {
+          // Assume it's a phone/whatsapp
+          window.open(contactInfo, '_blank');
+        }
+      }
     } catch (error) {
       console.error("Error during interaction:", error);
     } finally {

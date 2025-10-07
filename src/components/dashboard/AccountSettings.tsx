@@ -27,6 +27,9 @@ const AccountSettings = () => {
     username: profile?.username || "",
     bio: profile?.bio || "",
     avatar_url: profile?.avatar_url || "",
+    bank_name: (profile as any)?.bank_name || "",
+    account_number: (profile as any)?.account_number || "",
+    account_name: (profile as any)?.account_name || "",
   });
 
   const handleSave = async () => {
@@ -259,6 +262,52 @@ const AccountSettings = () => {
               }
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Bank Account Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Bank Account for Withdrawal
+          </CardTitle>
+          <CardDescription>
+            Link your bank account to withdraw your earnings.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="bank_name">Bank Name</Label>
+            <Input
+              id="bank_name"
+              placeholder="e.g., GTBank, Access Bank"
+              value={formData.bank_name}
+              onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="account_number">Account Number</Label>
+            <Input
+              id="account_number"
+              placeholder="10 digit account number"
+              value={formData.account_number}
+              onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="account_name">Account Name</Label>
+            <Input
+              id="account_name"
+              placeholder="Account holder name"
+              value={formData.account_name}
+              onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+            />
+          </div>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+            Save Bank Details
+          </Button>
         </CardContent>
       </Card>
 

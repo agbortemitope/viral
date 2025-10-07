@@ -120,6 +120,7 @@ export type Database = {
       content: {
         Row: {
           budget: number
+          contact_link: string | null
           content_type: string
           created_at: string
           description: string
@@ -136,6 +137,7 @@ export type Database = {
         }
         Insert: {
           budget?: number
+          contact_link?: string | null
           content_type: string
           created_at?: string
           description: string
@@ -152,6 +154,7 @@ export type Database = {
         }
         Update: {
           budget?: number
+          contact_link?: string | null
           content_type?: string
           created_at?: string
           description?: string
@@ -287,8 +290,11 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_name: string | null
+          account_number: string | null
           available: boolean | null
           avatar_url: string | null
+          bank_name: string | null
           bio: string | null
           categories: string[] | null
           coins: number
@@ -315,8 +321,11 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          account_name?: string | null
+          account_number?: string | null
           available?: boolean | null
           avatar_url?: string | null
+          bank_name?: string | null
           bio?: string | null
           categories?: string[] | null
           coins?: number
@@ -343,8 +352,11 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          account_name?: string | null
+          account_number?: string | null
           available?: boolean | null
           avatar_url?: string | null
+          bank_name?: string | null
           bio?: string | null
           categories?: string[] | null
           coins?: number
