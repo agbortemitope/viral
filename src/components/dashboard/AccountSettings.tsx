@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,9 @@ import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
-import { Loader2, Upload, User, Mail, Bell, Shield, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { getBankCode } from "@/lib/nigerian-banks";
+import { Loader2, Upload, User, Mail, Bell, Shield, Trash2, CheckCircle2 } from "lucide-react";
 
 const AccountSettings = () => {
   const { user, signOut } = useAuth();
@@ -22,6 +24,8 @@ const AccountSettings = () => {
   const { uploadAvatar, uploading } = useAvatarUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const [verifyingBank, setVerifyingBank] = useState(false);
+  const [bankVerified, setBankVerified] = useState(false);
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     username: profile?.username || "",
@@ -84,6 +88,81 @@ const AccountSettings = () => {
       description: "Check your email for password reset instructions.",
     });
   };
+
+  const verifyBankAccount = async () => {
+    if (!formData.bank_name || !formData.account_number) {
+      return;
+    }
+
+    if (formData.account_number.length !== 10) {
+      toast({
+        title: "Invalid account number",
+        description: "Account number must be exactly 10 digits",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const bankCode = getBankCode(formData.bank_name);
+    if (!bankCode) {
+      toast({
+        title: "Bank not found",
+        description: "Please enter a valid Nigerian bank name (e.g., GTBank, Access Bank)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setVerifyingBank(true);
+    setBankVerified(false);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-bank-account', {
+        body: {
+          account_number: formData.account_number,
+          bank_code: bankCode,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.verified) {
+        setFormData(prev => ({
+          ...prev,
+          account_name: data.account_name,
+        }));
+        setBankVerified(true);
+        toast({
+          title: "Account verified!",
+          description: `Account belongs to ${data.account_name}`,
+        });
+      } else {
+        toast({
+          title: "Verification failed",
+          description: data.error || "Could not verify account details",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Verification error",
+        description: error.message || "Failed to verify account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifyingBank(false);
+    }
+  };
+
+  // Auto-verify when both bank name and account number are complete
+  useEffect(() => {
+    if (formData.bank_name && formData.account_number && formData.account_number.length === 10) {
+      const timer = setTimeout(() => {
+        verifyBankAccount();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.bank_name, formData.account_number]);
 
   if (loading) {
     return (
@@ -281,33 +360,63 @@ const AccountSettings = () => {
             <Label htmlFor="bank_name">Bank Name</Label>
             <Input
               id="bank_name"
-              placeholder="e.g., GTBank, Access Bank"
+              placeholder="e.g., GTBank, Access Bank, UBA"
               value={formData.bank_name}
-              onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, bank_name: e.target.value });
+                setBankVerified(false);
+              }}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Enter the full name of your Nigerian bank
+            </p>
           </div>
           <div>
             <Label htmlFor="account_number">Account Number</Label>
-            <Input
-              id="account_number"
-              placeholder="10 digit account number"
-              value={formData.account_number}
-              onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
-            />
+            <div className="relative">
+              <Input
+                id="account_number"
+                placeholder="10 digit account number"
+                value={formData.account_number}
+                maxLength={10}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  setFormData({ ...formData, account_number: value });
+                  setBankVerified(false);
+                }}
+              />
+              {verifyingBank && (
+                <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-3 text-muted-foreground" />
+              )}
+              {bankVerified && !verifyingBank && (
+                <CheckCircle2 className="h-4 w-4 text-green-500 absolute right-3 top-3" />
+              )}
+            </div>
           </div>
           <div>
             <Label htmlFor="account_name">Account Name</Label>
             <Input
               id="account_name"
-              placeholder="Account holder name"
+              placeholder="Will be auto-filled after verification"
               value={formData.account_name}
-              onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+              disabled
+              className={bankVerified ? "bg-green-50 dark:bg-green-950/20" : ""}
             />
+            {bankVerified && (
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                ✓ Account verified successfully
+              </p>
+            )}
           </div>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving || !bankVerified}>
             {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Save Bank Details
           </Button>
+          {!bankVerified && formData.bank_name && formData.account_number && (
+            <p className="text-xs text-muted-foreground">
+              Please verify your account details before saving
+            </p>
+          )}
         </CardContent>
       </Card>
 
