@@ -104,7 +104,7 @@ const Portfolio = () => {
         marketplace_enabled: (profile as any)?.marketplace_enabled ?? false,
       });
       setMarketplaceEnabled((profile as any)?.marketplace_enabled || false);
-      setPortfolioLink((profile as any)?.portfolio_link || `${window.location.origin}/portfolio/${profile.username || profile.user_id}`);
+      setPortfolioLink((profile as any)?.portfolio_link || `${window.location.origin}/marketplace/profile/${profile.username || profile.user_id}`);
     }
   }, [profile]);
 
@@ -139,21 +139,69 @@ const Portfolio = () => {
     setSaving(true);
     try {
       // Generate portfolio link if not exists
-      const link = portfolioLink || `${window.location.origin}/portfolio/${profile?.username || profile?.user_id}`;
+      const link = portfolioLink || `${window.location.origin}/marketplace/profile/${profile?.username || profile?.user_id}`;
       
-      const { error } = await updateProfile({
-        ...profileData,
-        marketplace_enabled: marketplaceEnabled,
-        portfolio_link: link,
-      });
-      if (error) throw error;
+      // Check if enabling marketplace (and wasn't enabled before)
+      const enablingMarketplace = marketplaceEnabled && !(profile as any)?.marketplace_enabled;
+      
+      if (enablingMarketplace) {
+        // Check if user has enough coins
+        if (!profile || profile.coins < 5) {
+          toast({
+            title: "Insufficient coins",
+            description: "You need 5 coins to host your portfolio on the marketplace.",
+            variant: "destructive",
+          });
+          setSaving(false);
+          return;
+        }
+
+        // Deduct 5 coins
+        const newCoinBalance = profile.coins - 5;
+        
+        // Update profile with marketplace enabled and deduct coins
+        const { error: updateError } = await updateProfile({
+          ...profileData,
+          marketplace_enabled: true,
+          portfolio_link: link,
+          coins: newCoinBalance,
+        });
+        
+        if (updateError) throw updateError;
+
+        // Record transaction
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert({
+            user_id: user?.id,
+            amount: -5,
+            transaction_type: 'marketplace_hosting',
+            description: 'Marketplace portfolio hosting fee',
+            status: 'completed',
+          });
+
+        if (transactionError) throw transactionError;
+
+        toast({
+          title: "Portfolio hosted!",
+          description: "Your portfolio is now visible on the marketplace. 5 coins deducted.",
+        });
+      } else {
+        // Regular update without coin charge
+        const { error } = await updateProfile({
+          ...profileData,
+          marketplace_enabled: marketplaceEnabled,
+          portfolio_link: link,
+        });
+        if (error) throw error;
+        
+        toast({
+          title: "Portfolio updated",
+          description: "Your portfolio profile has been successfully updated.",
+        });
+      }
       
       setPortfolioLink(link);
-      
-      toast({
-        title: "Portfolio updated",
-        description: "Your portfolio profile has been successfully updated.",
-      });
     } catch (error: any) {
       toast({
         title: "Error updating portfolio",
@@ -430,7 +478,7 @@ const Portfolio = () => {
                 Host on Marketplace
               </Label>
               <p className="text-sm text-muted-foreground">
-                Make your portfolio visible on the marketplace
+                Make your portfolio visible on the marketplace (5 coins)
               </p>
             </div>
             <Switch

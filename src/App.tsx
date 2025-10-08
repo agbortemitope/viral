@@ -9,6 +9,7 @@ import Feed from "./pages/Feed";
 import Wallet from "./pages/Wallet";
 import Dashboard from "./pages/Dashboard";
 import Marketplace from "./pages/Marketplace";
+import MarketplaceProfile from "./pages/MarketplaceProfile";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 import HelpCenter from "./pages/support/HelpCenter";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/marketplace/profile/:id" element={<MarketplaceProfile />} />
             <Route path="/signup" element={<SignUp />} />
             
             {/* Support Pages */}

@@ -149,17 +149,27 @@ const Marketplace = () => {
                         {item.views_count} views • {item.contact_count} contacts
                       </div>
                     </div>
-                    <Button 
-                      className="w-full" 
-                      variant="outline"
-                      onClick={() => {
-                        incrementViews(item.id);
-                        setSelectedListing(item);
-                        setIsDialogOpen(true);
-                      }}
-                    >
-                      View Details & Apply
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        className="flex-1" 
+                        variant="outline"
+                        onClick={() => {
+                          incrementViews(item.id);
+                          setSelectedListing(item);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      {item.profiles?.username && (
+                        <Button 
+                          variant="secondary"
+                          onClick={() => window.location.href = `/marketplace/profile/${item.profiles.username || item.user_id}`}
+                        >
+                          Profile
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))

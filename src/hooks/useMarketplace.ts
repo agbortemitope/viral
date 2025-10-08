@@ -53,7 +53,12 @@ export const useMarketplace = () => {
       const { data, error } = await supabase
         .from('marketplace_listings')
         .select(`
-          *
+          *,
+          profiles!marketplace_listings_user_id_fkey (
+            full_name,
+            avatar_url,
+            username
+          )
         `)
         .eq('is_active', true)
         .order('featured', { ascending: false })
