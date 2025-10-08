@@ -82,10 +82,34 @@ const Header = () => {
                     <Button
                       variant="ghost"
                       className="w-full justify-start"
+                      onClick={() => handleNavigation("/feed")}
+                    >
+                      <TrendingUp className="h-4 w-4 mr-3" />
+                      Feed
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => handleNavigation("/marketplace")}
+                    >
+                      <User className="h-4 w-4 mr-3" />
+                      Marketplace
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => handleNavigation("/wallet")}
+                    >
+                      <Coins className="h-4 w-4 mr-3" />
+                      Wallet
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
                       onClick={() => handleNavigation("/dashboard")}
                     >
                       <User className="h-4 w-4 mr-3" />
-                      Profile
+                      Dashboard
                     </Button>
                   </nav>
 

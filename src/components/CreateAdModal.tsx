@@ -370,7 +370,7 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
               <SelectContent className="bg-background border-border z-50">
                 <SelectItem value="job">Job Posting</SelectItem>
                 <SelectItem value="event">Event</SelectItem>
-                <SelectItem value="advertisement">Advertisement</SelectItem>
+                <SelectItem value="ad">Advertisement</SelectItem>
                 <SelectItem value="property">Property</SelectItem>
                 <SelectItem value="product">Product</SelectItem>
                 <SelectItem value="paid_task">Paid Task</SelectItem>
