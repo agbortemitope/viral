@@ -7,13 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
 import { supabase } from "@/integrations/supabase/client";
-import { getBankCode } from "@/lib/nigerian-banks";
+import { getBankCode, nigerianBanks } from "@/lib/nigerian-banks";
 import { Loader2, Upload, User, Mail, Bell, Shield, Trash2, CheckCircle2 } from "lucide-react";
 
 const AccountSettings = () => {
@@ -358,17 +359,26 @@ const AccountSettings = () => {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="bank_name">Bank Name</Label>
-            <Input
-              id="bank_name"
-              placeholder="e.g., GTBank, Access Bank, UBA"
-              value={formData.bank_name}
-              onChange={(e) => {
-                setFormData({ ...formData, bank_name: e.target.value });
+            <Select 
+              value={formData.bank_name} 
+              onValueChange={(value) => {
+                setFormData({ ...formData, bank_name: value });
                 setBankVerified(false);
               }}
-            />
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select your bank" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border z-50 max-h-[300px]">
+                {Object.keys(nigerianBanks).sort().map((bankName) => (
+                  <SelectItem key={bankName} value={bankName} className="capitalize">
+                    {bankName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="text-xs text-muted-foreground mt-1">
-              Enter the full name of your Nigerian bank
+              Select your Nigerian bank
             </p>
           </div>
           <div>
