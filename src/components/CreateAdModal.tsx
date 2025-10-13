@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload } from "lucide-react";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { Loader2, Upload, X } from "lucide-react";
 
 interface CreateAdModalProps {
   open: boolean;
@@ -21,8 +22,11 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { uploadImage, uploading: imageUploading } = useImageUpload();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [adType, setAdType] = useState<string>("");
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -318,32 +322,6 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
           </>
         );
 
-      case "paid_task":
-        return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="taskPayment">Task Payment</Label>
-              <Input
-                id="taskPayment"
-                type="number"
-                placeholder="Payment amount"
-                value={formData.taskPayment}
-                onChange={(e) => setFormData({...formData, taskPayment: e.target.value})}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="taskDeadline">Deadline</Label>
-              <Input
-                id="taskDeadline"
-                type="date"
-                value={formData.taskDeadline}
-                onChange={(e) => setFormData({...formData, taskDeadline: e.target.value})}
-                required
-              />
-            </div>
-          </>
-        );
 
       default:
         return null;
@@ -373,7 +351,6 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
                 <SelectItem value="ad">Advertisement</SelectItem>
                 <SelectItem value="property">Property</SelectItem>
                 <SelectItem value="product">Product</SelectItem>
-                <SelectItem value="paid_task">Paid Task</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -447,18 +424,65 @@ const CreateAdModal = ({ open, onOpenChange, onSuccess }: CreateAdModalProps) =>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="imageUrl">Image URL (optional)</Label>
+                <Label htmlFor="imageUrl">Image (optional)</Label>
                 <div className="flex gap-2">
                   <Input
                     id="imageUrl"
                     placeholder="https://example.com/image.jpg"
-                    value={formData.imageUrl}
+                    value={uploadedImage || formData.imageUrl}
                     onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+                    readOnly={!!uploadedImage}
                   />
-                  <Button type="button" variant="outline" size="icon">
-                    <Upload className="h-4 w-4" />
-                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const url = await uploadImage(file, 'ad-images');
+                        if (url) {
+                          setUploadedImage(url);
+                          setFormData({...formData, imageUrl: url});
+                        }
+                      }
+                    }}
+                  />
+                  {uploadedImage ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setUploadedImage(null);
+                        setFormData({...formData, imageUrl: ""});
+                      }}
+                      disabled={imageUploading}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={imageUploading}
+                    >
+                      {imageUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
+                {uploadedImage && (
+                  <div className="mt-2">
+                    <img src={uploadedImage} alt="Preview" className="h-32 w-full object-cover rounded" />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

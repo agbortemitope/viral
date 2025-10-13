@@ -16,8 +16,12 @@ import {
   MapPin,
   Mail,
   Phone,
+  Upload,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContentCardWithDialogProps {
   title?: string;
@@ -48,26 +52,46 @@ const ContentCardWithDialog = ({
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [showScreenshotUpload, setShowScreenshotUpload] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadImage, uploading } = useImageUpload();
+  const { toast } = useToast();
+
+  const handleScreenshotUpload = async (file: File) => {
+    const url = await uploadImage(file, 'task-screenshots');
+    if (url) {
+      setScreenshotUrl(url);
+      toast({
+        title: "Screenshot uploaded",
+        description: "Your task completion screenshot has been uploaded",
+      });
+    }
+  };
 
   const handleInteraction = async () => {
     if (!onInteraction || hasInteracted || isInteracting) return;
+
+    if (showScreenshotUpload && !screenshotUrl) {
+      toast({
+        title: "Screenshot required",
+        description: "Please upload a screenshot to verify task completion",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsInteracting(true);
     try {
       await onInteraction();
       setIsDialogOpen(false);
-      
-      // Redirect to contact link after successful interaction
+
       if (contactInfo) {
-        // Open contact link in new tab
         if (contactInfo.includes('@')) {
-          // It's an email
           window.open(`mailto:${contactInfo}`, '_blank');
         } else if (contactInfo.startsWith('http')) {
-          // It's a URL
           window.open(contactInfo, '_blank');
         } else {
-          // Assume it's a phone/whatsapp
           window.open(contactInfo, '_blank');
         }
       }
@@ -316,10 +340,87 @@ const ContentCardWithDialog = ({
               </div>
             )}
 
+            {/* Screenshot Upload Section */}
+            <div className="bg-muted/30 p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-sm md:text-base">Task Verification (Optional)</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowScreenshotUpload(!showScreenshotUpload)}
+                >
+                  {showScreenshotUpload ? "Hide" : "Upload Screenshot"}
+                </Button>
+              </div>
+              {showScreenshotUpload && (
+                <div className="mt-3 space-y-3">
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    Upload a screenshot to verify you've completed this task
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleScreenshotUpload(file);
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || !!screenshotUrl}
+                      className="flex-1"
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : screenshotUrl ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Uploaded
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Choose File
+                        </>
+                      )}
+                    </Button>
+                    {screenshotUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setScreenshotUrl(null)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  {screenshotUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={screenshotUrl}
+                        alt="Screenshot preview"
+                        className="w-full h-32 object-cover rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Action Button */}
             <Button
               onClick={handleInteraction}
-              disabled={isInteracting || hasInteracted}
+              disabled={isInteracting || hasInteracted || (showScreenshotUpload && !screenshotUrl)}
               className="w-full"
               size="lg"
             >

@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePaystack } from "@/hooks/usePaystack";
+import PaystackButton from "@/components/PaystackButton";
 import { getUserLocation, convertCurrency, formatCurrency, getAllCurrencies, coinsToFiat, fiatToCoins } from "@/lib/currency";
 import {
   Dialog,
@@ -34,14 +36,16 @@ const WalletPage = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { initializePayment, processing } = usePaystack();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [userCurrency, setUserCurrency] = useState("USD");
-  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState("NGN");
   const [locationLoading, setLocationLoading] = useState(true);
   const [purchaseAmount, setPurchaseAmount] = useState("");
+  const [paystackConfig, setPaystackConfig] = useState<any>(null);
   const [bankAccountDialogOpen, setBankAccountDialogOpen] = useState(false);
   const [bankDetails, setBankDetails] = useState({
     accountNumber: "",
@@ -96,7 +100,7 @@ const WalletPage = () => {
 
   const handlePurchaseCoins = async () => {
     const fiatAmount = parseFloat(purchaseAmount);
-    
+
     if (!fiatAmount || fiatAmount <= 0) {
       toast({
         title: "Invalid amount",
@@ -106,50 +110,18 @@ const WalletPage = () => {
       return;
     }
 
-    const coinsToAdd = calculateCoins(fiatAmount, selectedCurrency);
-    setLoading(true);
-    
-    try {
-      const { error: transactionError } = await supabase
-        .from("transactions")
-        .insert({
-          user_id: user?.id,
-          transaction_type: "purchase",
-          amount: coinsToAdd,
-          description: `Purchased ${coinsToAdd} coins for ${formatCurrency(fiatAmount, selectedCurrency)}`,
-          status: "completed",
-          currency: selectedCurrency,
-          fiat_amount: fiatAmount,
-          exchange_rate: `Purchase: 100 coins = ₦1500`,
-          payment_method: "card"
-        });
-
-      if (transactionError) throw transactionError;
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ 
-          coins: (profile?.coins || 0) + coinsToAdd,
-        })
-        .eq("user_id", user?.id);
-
-      if (profileError) throw profileError;
-
+    if (selectedCurrency !== "NGN") {
       toast({
-        title: "Purchase successful!",
-        description: `${coinsToAdd} coins have been added to your wallet`,
-      });
-
-      setPurchaseAmount("");
-      fetchTransactions();
-    } catch (error) {
-      toast({
-        title: "Purchase failed",
-        description: "There was an error processing your purchase",
+        title: "Currency not supported",
+        description: "Currently, only Nigerian Naira (NGN) is supported for payments",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+      return;
+    }
+
+    const config = await initializePayment(fiatAmount);
+    if (config) {
+      setPaystackConfig(config);
     }
   };
 
@@ -423,13 +395,24 @@ const WalletPage = () => {
                   )}
                 </div>
 
-                <Button 
-                  onClick={handlePurchaseCoins} 
-                  disabled={loading || !purchaseAmount}
-                  className="w-full"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Purchase Coins"}
-                </Button>
+                {!paystackConfig ? (
+                  <Button
+                    onClick={handlePurchaseCoins}
+                    disabled={processing || !purchaseAmount}
+                    className="w-full"
+                  >
+                    {processing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {processing ? "Initializing..." : "Purchase Coins with Paystack"}
+                  </Button>
+                ) : (
+                  <PaystackButton
+                    config={paystackConfig}
+                    disabled={processing}
+                    className="w-full"
+                  >
+                    Complete Payment
+                  </PaystackButton>
+                )}
               </div>
             </Card>
 

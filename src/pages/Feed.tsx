@@ -200,12 +200,13 @@ const Feed = () => {
           <CreateAdModal open={createAdOpen} onOpenChange={setCreateAdOpen} onSuccess={fetchContent} />
 
           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="mb-8">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="job">Jobs</TabsTrigger>
               <TabsTrigger value="event">Events</TabsTrigger>
               <TabsTrigger value="ad">Ads</TabsTrigger>
               <TabsTrigger value="property">Property</TabsTrigger>
+              <TabsTrigger value="product">Products</TabsTrigger>
             </TabsList>
           </Tabs>
 
