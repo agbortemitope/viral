@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Coins, MapPin, Calendar, Search, Building, Loader as Loader2, Star, DollarSign, Eye, FileText } from "lucide-react";
+import { Coins, MapPin, Calendar, Search, Building, Loader as Loader2, Star, DollarSign, Eye, FileText, Heart, Filter } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -28,14 +31,96 @@ const Marketplace = () => {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState({
+    priceRange: [0, 100000],
+    experienceLevel: [] as string[],
+    remoteWork: false,
+    rating: 0,
+    sortBy: "recent" as string,
+  });
   const { user } = useAuth();
   const { listings, loading, incrementViews, incrementContacts } = useMarketplace();
+
+  useEffect(() => {
+    if (user) {
+      fetchFavorites();
+    }
+  }, [user]);
+
+  const fetchFavorites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('favorited_id')
+        .eq('user_id', user?.id)
+        .eq('favorited_type', 'listing');
+      
+      if (error) throw error;
+      setFavorites(new Set(data?.map(f => f.favorited_id) || []));
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (listingId: string) => {
+    try {
+      if (favorites.has(listingId)) {
+        await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user?.id)
+          .eq('favorited_type', 'listing')
+          .eq('favorited_id', listingId);
+        
+        setFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(listingId);
+          return newSet;
+        });
+      } else {
+        await supabase
+          .from('favorites')
+          .insert({
+            user_id: user?.id,
+            favorited_type: 'listing',
+            favorited_id: listingId,
+          });
+        
+        setFavorites(prev => new Set([...prev, listingId]));
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
 
   const filteredItems = listings.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === "all" || item.category === selectedType;
-    return matchesSearch && matchesType;
+    const matchesPrice = item.price_min >= filters.priceRange[0] &&
+                         item.price_max <= filters.priceRange[1];
+    const matchesExperience = filters.experienceLevel.length === 0 ||
+                             filters.experienceLevel.includes(item.experience_level);
+    const matchesRemote = !filters.remoteWork || item.remote_work;
+    const matchesRating = item.rating >= filters.rating;
+    
+    return matchesSearch && matchesType && matchesPrice &&
+           matchesExperience && matchesRemote && matchesRating;
+  }).sort((a, b) => {
+    switch (filters.sortBy) {
+      case "price_low":
+        return a.price_min - b.price_min;
+      case "price_high":
+        return b.price_min - a.price_min;
+      case "rating":
+        return b.rating - a.rating;
+      case "popular":
+        return b.views_count - a.views_count;
+      default:
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
   });
 
   const getTypeColor = (category: string) => {
@@ -79,17 +164,26 @@ const Marketplace = () => {
 
           {/* Search and Filters */}
           <div className="mb-6 md:mb-8 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search opportunities..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search opportunities..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
             </div>
             
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               <Button
                 variant={selectedType === "all" ? "default" : "outline"}
                 onClick={() => setSelectedType("all")}
@@ -103,7 +197,108 @@ const Marketplace = () => {
                 onChange={(e) => setSelectedType(e.target.value || "all")}
                 className="max-w-xs"
               />
+              <Select value={filters.sortBy} onValueChange={(value) => setFilters({...filters, sortBy: value})}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Most Recent</SelectItem>
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                  <SelectItem value="rating">Highest Rated</SelectItem>
+                  <SelectItem value="price_low">Price: Low to High</SelectItem>
+                  <SelectItem value="price_high">Price: High to Low</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Advanced Filters Panel */}
+            {showFilters && (
+              <Card className="p-4 bg-gradient-card border-border/50">
+                <h3 className="font-semibold mb-4">Advanced Filters</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Price Range: ₦{filters.priceRange[0].toLocaleString()} - ₦{filters.priceRange[1].toLocaleString()}
+                    </label>
+                    <Slider
+                      value={filters.priceRange}
+                      onValueChange={(value) => setFilters({...filters, priceRange: value})}
+                      max={100000}
+                      step={1000}
+                      className="mb-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Experience Level</label>
+                    <div className="space-y-2">
+                      {['beginner', 'intermediate', 'expert'].map(level => (
+                        <div key={level} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={level}
+                            checked={filters.experienceLevel.includes(level)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFilters({...filters, experienceLevel: [...filters.experienceLevel, level]});
+                              } else {
+                                setFilters({...filters, experienceLevel: filters.experienceLevel.filter(l => l !== level)});
+                              }
+                            }}
+                          />
+                          <label htmlFor={level} className="text-sm capitalize cursor-pointer">{level}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Additional Options</label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="remote"
+                          checked={filters.remoteWork}
+                          onCheckedChange={(checked) => setFilters({...filters, remoteWork: !!checked})}
+                        />
+                        <label htmlFor="remote" className="text-sm cursor-pointer">Remote work available</label>
+                      </div>
+                      <div>
+                        <label className="text-sm mb-1 block">Minimum Rating: {filters.rating}+ stars</label>
+                        <Slider
+                          value={[filters.rating]}
+                          onValueChange={(value) => setFilters({...filters, rating: value[0]})}
+                          max={5}
+                          step={0.5}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 mt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setFilters({
+                      priceRange: [0, 100000],
+                      experienceLevel: [],
+                      remoteWork: false,
+                      rating: 0,
+                      sortBy: "recent",
+                    })} 
+                    size="sm"
+                  >
+                    Reset Filters
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setShowFilters(false)} 
+                    size="sm"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </Card>
+            )}
           </div>
 
           {/* Items Grid */}
@@ -126,9 +321,24 @@ const Marketplace = () => {
                       <Badge className={getTypeColor(item.category)}>
                         {item.category}
                       </Badge>
-                      <div className="flex items-center space-x-1 bg-success/20 px-2 py-1 rounded-full">
-                        <Star className="h-3 w-3 text-success" />
-                        <span className="text-xs font-bold">{item.rating.toFixed(1)}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center space-x-1 bg-success/20 px-2 py-1 rounded-full">
+                          <Star className="h-3 w-3 text-success" />
+                          <span className="text-xs font-bold">{item.rating.toFixed(1)}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(item.id);
+                          }}
+                        >
+                          <Heart
+                            className={`h-4 w-4 ${favorites.has(item.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+                          />
+                        </Button>
                       </div>
                     </div>
                     <CardTitle className="text-lg">{item.title}</CardTitle>
