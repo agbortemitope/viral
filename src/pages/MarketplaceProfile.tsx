@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewsList from "@/components/ReviewsList";
 import { 
   User, 
   DollarSign, 
@@ -18,7 +22,8 @@ import {
   Briefcase,
   FileText,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  Heart
 } from "lucide-react";
 
 interface Profile {
@@ -66,14 +71,67 @@ interface MarketplaceListing {
 const MarketplaceProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [listing, setListing] = useState<MarketplaceListing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     fetchProfileData();
   }, [id]);
+
+  useEffect(() => {
+    if (user && profile) {
+      checkFavorite();
+    }
+  }, [user, profile]);
+
+  const checkFavorite = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('favorited_type', 'creator')
+        .eq('favorited_id', profile?.user_id)
+        .single();
+      
+      setIsFavorite(!!data);
+    } catch (error) {
+      setIsFavorite(false);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (!user || !profile) return;
+
+    try {
+      if (isFavorite) {
+        await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('favorited_type', 'creator')
+          .eq('favorited_id', profile.user_id);
+        
+        setIsFavorite(false);
+      } else {
+        await supabase
+          .from('favorites')
+          .insert({
+            user_id: user.id,
+            favorited_type: 'creator',
+            favorited_id: profile.user_id,
+          });
+        
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
 
   const fetchProfileData = async () => {
     try {
@@ -182,6 +240,17 @@ const MarketplaceProfile = () => {
                       <Badge className="bg-success/20 text-success border-success/30">
                         Available for Work
                       </Badge>
+                    )}
+                    {user && user.id !== profile.user_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleFavorite}
+                      >
+                        <Heart
+                          className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+                        />
+                      </Button>
                     )}
                   </div>
                   {profile.portfolio_title && (
@@ -301,6 +370,39 @@ const MarketplaceProfile = () => {
                 </CardContent>
               </Card>
             )}
+            
+            {/* Reviews Section */}
+            <Card className="bg-gradient-card border-border/50">
+              <CardHeader>
+                <CardTitle>Reviews & Ratings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="reviews">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="reviews" className="flex-1">View Reviews</TabsTrigger>
+                    {user && user.id !== profile.user_id && (
+                      <TabsTrigger value="write" className="flex-1">Write Review</TabsTrigger>
+                    )}
+                  </TabsList>
+                  
+                  <TabsContent value="reviews" className="mt-4">
+                    <ReviewsList revieweeId={profile.user_id} />
+                  </TabsContent>
+                  
+                  {user && user.id !== profile.user_id && (
+                    <TabsContent value="write" className="mt-4">
+                      <ReviewForm 
+                        revieweeId={profile.user_id} 
+                        listingId={listing?.id}
+                        onSuccess={() => {
+                          fetchProfileData();
+                        }}
+                      />
+                    </TabsContent>
+                  )}
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
