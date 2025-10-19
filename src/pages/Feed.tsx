@@ -6,6 +6,8 @@ import ContentCard from "@/components/ContentCardWithDialog";
 import CreateAdModal from "@/components/CreateAdModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useInteractions } from "@/hooks/useInteractions";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { useBudgetCheck } from "@/hooks/useBudgetCheck";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,8 +38,11 @@ const Feed = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, refetch: refetchProfile } = useProfile();
   const { trackInteraction } = useInteractions();
+  const { trackInteraction: trackAnalytics } = useAnalytics();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  useBudgetCheck();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -75,7 +80,8 @@ const Feed = () => {
     if (!user || interactedItems.has(contentId)) return;
 
     try {
-      // Check if user already interacted with this content
+      trackAnalytics(contentId, 'click');
+      
       const { data: existingInteraction } = await supabase
         .from("user_interactions")
         .select("id")
@@ -93,7 +99,6 @@ const Feed = () => {
         return;
       }
 
-      // Create interaction record
       const { error: interactionError } = await supabase
         .from("user_interactions")
         .insert({
@@ -105,7 +110,6 @@ const Feed = () => {
 
       if (interactionError) throw interactionError;
 
-      // Update user's coins
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ 
@@ -116,7 +120,6 @@ const Feed = () => {
 
       if (profileError) throw profileError;
 
-      // Create transaction record
       await supabase.from("transactions").insert({
         user_id: user.id,
         transaction_type: "earn",
@@ -125,7 +128,11 @@ const Feed = () => {
         description: `Earned ${rewardCoins} coins from interaction`,
       });
 
-      // Update local state
+      await supabase.rpc('track_content_spend', {
+        p_content_id: contentId,
+        p_amount: rewardCoins,
+      });
+
       setInteractedItems(prev => new Set([...prev, contentId]));
       refetchProfile();
 
@@ -200,12 +207,13 @@ const Feed = () => {
           <CreateAdModal open={createAdOpen} onOpenChange={setCreateAdOpen} onSuccess={fetchContent} />
 
           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="mb-8">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="job">Jobs</TabsTrigger>
               <TabsTrigger value="event">Events</TabsTrigger>
               <TabsTrigger value="ad">Ads</TabsTrigger>
               <TabsTrigger value="property">Property</TabsTrigger>
+              <TabsTrigger value="product">Products</TabsTrigger>
             </TabsList>
           </Tabs>
 
