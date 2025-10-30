@@ -469,7 +469,8 @@ const Marketplace = () => {
                   </div>
                 )}
               </div>
-
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5177645031692838"
+     crossorigin="anonymous"></script>
               {/* Engagement Stats */}
               <div className="flex items-center gap-6 p-4 bg-muted/20 rounded-lg">
                 <div className="flex items-center gap-2">
